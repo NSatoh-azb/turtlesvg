@@ -1,5 +1,5 @@
 import turtle
-import mysvgutl as svg
+from . import mysvgutl as svg
 
 class MyTurtle():
     '''
