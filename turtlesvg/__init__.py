@@ -1,1 +1,2 @@
-from . import turtlesvg
+from .turtlesvg import turtlesvg
+from .turtlesvg import mysvgutl
