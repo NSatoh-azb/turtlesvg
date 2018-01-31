@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import turtle
-import mysvgutl as svg
+import turtlesvg.svgutl as svg
 
 class MyTurtle():
     '''
