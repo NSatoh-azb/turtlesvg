@@ -33,3 +33,5 @@
 '''
 
 from .turtlesvg import MyTurtle
+
+__all__ = ['MyTurtle']
