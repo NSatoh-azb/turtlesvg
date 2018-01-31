@@ -1,2 +1,2 @@
 # -*- coding: utf-8 -*-
-#from . import svgutl
+from . import svgutl
