@@ -1,39 +1,41 @@
-# -*- coding: utf-8 -*-
 import turtle
 import svgutl.svgutl as svg
 
 class MyTurtle():
     '''
-    spyderなど、IPython環境では、マジックコマンド
-      %gui tk
-    を実行してから利用する。（そうしないと動作が不安定）
+　　  spyderなど、IPython環境では、マジックコマンド
     
-    使い方：
+  　    %gui tk
+       
+  　　を実行してから利用する。（そうしないと動作が不安定）
     
-        import trutlesvg as ttl
-        t = ttl.MyTurtle()
-      
-      として、MyTurtleオブジェクト t を生成する。
-      以下、
-      
-        t.forward(100)
-        t.left(90)
-        t.forward(150)
-          :
-          :
+  　　-+-+- 使い方 -+-+-
     
-      のように、通常のturtleモジュール同様に利用して
-      タートルを動かして絵を描く。
-      （ただし、通常のturtleモジュールの全ての機能をサポートしていない・・・！）
+      　　import trutlesvg as ttl
+      　　t = ttl.MyTurtle()
       
-      最後に、
+    　　として、MyTurtleオブジェクト t を生成する。
+   　　 以下、
       
-        t.penup() # 保存前に1度ペンアップが必要
-        t.save_svg("filename.svg")
+     　　 t.forward(100)
+     　　 t.left(90)
+     　　 t.forward(150)
+       　   :
+        　  :
+    
+    　　のように、通常のturtleモジュール同様に利用して
+    　　タートルを動かして絵を描く。
+    　　（ただし、通常のturtleモジュールの全ての機能をサポートしていない・・・！）
+      
+    　　最後に、
+        　　        #!-- 重要 --!#
+      　　t.penup() # 保存前に1度ペンアップの実行が必要
+      　　t.save_svg("filename.svg")
         
-      などとすると、"filename.svg"にSVGファイルが保存される。  
+    　　などとすると、"filename.svg"にSVGファイルが保存される。  
       
-      
+    -+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+        
     各関数のコメントは，タートルグラフィックスの日本語リファレンス：
       Python >> Documentation >> Python 標準ライブラリ >> 24. プログラムのフレームワーク >>
         24.1. turtle Turtle graphics
@@ -718,7 +720,7 @@ class MyTurtle():
         elif self.isdown():
             self.__turtle.pensize(width)
             self._polyline_terminate()
-            self._polyline_init__()
+            self._polyline_init()
 
     width = pensize
 
