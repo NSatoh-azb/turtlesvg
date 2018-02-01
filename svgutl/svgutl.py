@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 @author: NSatoh
 Azabu high school, department of mathematics
