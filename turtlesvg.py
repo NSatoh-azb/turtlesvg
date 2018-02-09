@@ -872,12 +872,12 @@ class MyTurtle():
         >>> turtle.pencolor()
         (50.0, 193.0, 143.0)
         '''
-        if args is None:
+        if args == ():
             return self.__turtle.pencolor()
 
         # 色変更があった場合はpolylineを閉じる
         elif self.isdown():
-            self.__turtle.pencolor(args)
+            self.__turtle.pencolor(*args)
             self._polyline_terminate()
             self._polyline_init()
 
@@ -2242,3 +2242,4 @@ class Polygon(TurtlePicture):
 
     def __init__(self, start_pt=None):
         super().__init__(start_pt)
+
