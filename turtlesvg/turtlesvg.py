@@ -153,15 +153,12 @@ class MyTurtle():
         elif y > self._y_max:
             self._y_max = y
 
-    def save_svg(self, filename='myturtle_svgoutput.svg', unit_width=0.5, unit_length=1):
-        #TODO
-        # unit lengthが必要になるのでは？
-        # margin を 5 ずつ設けているが、これも本当は引数で指定できるようにするべきか 
-        
-        x0 = int(self._x_min + 5)
-        y0 = int(self._y_max + 5)
-        w = int(self._x_max + 10) - x0
-        h = y0 - int(self._y_min - 5)
+    def save_as_svg(self, filename='myturtle_svgoutput.svg', 
+                 unit_width=0.5, unit_length=1, margin=5):        
+        x0 = int(self._x_min + margin)
+        y0 = int(self._y_max + margin)
+        w = int(self._x_max + margin*2) - x0
+        h = y0 - int(self._y_min - margin)
 
         # y座標は反転        
         svg_svg = svg.Svg(w=w, h=h, x0=x0, y0=-y0, vb_w=w, vb_h=h)
@@ -435,8 +432,8 @@ class MyTurtle():
         11
         >>> turtle.fd(50)
         '''
-        #TODO: support
-        print("Sorry. This command is unsupported...")
+        self.__turtle.stamp()
+        print("このコマンドは出力されるSVGファイルには反映されません．")
 
 
 
@@ -456,8 +453,7 @@ class MyTurtle():
         >>> turtle.position()
         (200.00,-0.00)
         '''
-        #TODO: support
-        print("Sorry. This command is unsupported...")
+        self.__turtle.clearstamp(stampid)
 
 
 
@@ -481,8 +477,7 @@ class MyTurtle():
         >>> turtle.clearstamps(-2)
         >>> turtle.clearstamps()
         '''
-        #TODO: support
-        print("Sorry. This command is unsupported...")
+        self.__turtle.clearstamps(n)
 
 
 
@@ -1061,7 +1056,7 @@ class MyTurtle():
         return self.__turtle.isvisible()
 
 
-# wiphere
+# wip ------
 
     def shape(self, name=None):
         '''
