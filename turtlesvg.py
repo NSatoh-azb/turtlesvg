@@ -1,5 +1,6 @@
 import turtle
 import svgutl.svgutl as svg
+import datetime
 
 class MyTurtle():
     '''
@@ -30,7 +31,7 @@ class MyTurtle():
     　　最後に、
         　　        #!-- 重要 --!#
       　　t.penup() # 保存前に1度ペンアップの実行が必要
-      　　t.save_svg("filename.svg")
+      　　t.save_as_svg("filename.svg")
         
     　　などとすると、"filename.svg"にSVGファイルが保存される。  
       
@@ -153,20 +154,50 @@ class MyTurtle():
         elif y > self._y_max:
             self._y_max = y
 
-    def save_as_svg(self, filename='myturtle_svgoutput.svg', 
-                 unit_width=0.5, unit_length=1, margin=5):        
-        x0 = int(self._x_min + margin)
+    def save_as_svg(self, filename=None, 
+                 unit_width=1, unit_length=1, margin=5, 
+                 background=None):
+        '''
+        タートルグラフィックスの実行結果を，SVG画像として保存する．
+        
+        :param filename:    ファイル名
+        :param unit_width:  線の太さ
+        :param unit_length: 単位長さ
+        :param margin:      画像外周の余白幅
+        :param background:  背景色
+        
+        ・ファイル名を指定せず実行すると，
+         「turtlesvg_output_日付時刻.svg」に保存
+        ・背景色を設定すると，その色のrectを1つ背後に配置． 
+        '''
+        x0 = int(self._x_min - margin)
         y0 = int(self._y_max + margin)
         w = int(self._x_max + margin*2) - x0
         h = y0 - int(self._y_min - margin)
 
         # y座標は反転        
         svg_svg = svg.Svg(w=w, h=h, x0=x0, y0=-y0, vb_w=w, vb_h=h)
+        
+        # 背景色指定があれば、その色のrectを生成
+        if background:
+            bg_rect = svg.SvgElement('rect', {
+                    'x'      : x0, 
+                    'y'      : -y0, 
+                    'width'  : w, 
+                    'height' : h,
+                    'fill'   : background
+                    })
+            svg_svg.append_element(bg_rect)
+        
         for pl in self.__polylines:
             svg_pl = pl.get_svg_polyline(unit_width=unit_width, unit_length=unit_length)
             svg_svg.append_element(svg_pl)
         
         svg_str = svg_svg.get_svg()
+        
+        if filename == None:
+            time_str = datetime.strftime("%Y-%m%d-%H%M-%S")
+            filename = f'turtlesvg_output_{time_str}.svg'
         
         with open(filename, "w") as f:
             f.write(svg_str)
