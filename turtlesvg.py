@@ -2237,6 +2237,36 @@ class Polyline(TurtlePicture):
 
         return svg_polyline
 
+    def get_tikz_form(self, unit_width=0.5, unit_length=0.03, indent_depth=2):
+        '''
+        \\draw [_options] (x0, y0) -- (x1, y1) -- ... -- (xn, yn);
+        の形の文字列を返す．
+        '''
+        _pen = self.get_pen()
+        _stroke_width = _pen['pensize'] * unit_width
+        _stroke_color = _pen['pencolor']
+        _points = self.get_points()
+
+        indent_space = ' ' * indent_depth
+
+        _options = 'line width={}pt'.format(_stroke_width)
+        if _stroke_color != 'black':
+            #TODO 'red'とか'blue'でないRGB指定をサポートしたい
+            _options += ', color={}'.format(_stroke_color)
+
+        tikz = indent_space + r'\draw [{}]'.format(_options)
+
+        tikz += '\n' + indent_space * 2 + '   '
+        for cnt, pt in enumerate(_points):
+            tikz += ' ({x:>.4f}, {y:>.4f})'.format(x=pt[0]*unit_length,
+                                         y=pt[1]*unit_length)
+            if cnt < len(_points)-1:
+                tikz += '\n' + indent_space * 2 +' --'
+            else:
+                tikz += ';'
+
+        return tikz
+
 
 class Polygon(TurtlePicture):
 
