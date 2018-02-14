@@ -130,8 +130,10 @@ class MyTurtle():
         が，閉じたpathを再開させるなら，__polylines.pop()でPathオブジェクトを受け取って
         やるべきだろう．
         '''
-        self.__path.set_pen(self.pen())
-        self.__paths.append(self.__path)
+        # 移動してない場合はリストに追加せずに破棄
+        if len(self.__path.d_list) > 1:
+            self.__path.set_pen(self.pen())
+            self.__paths.append(self.__path)
 
 
     def _fill_path_terminate(self):
@@ -2456,7 +2458,6 @@ t2.goto(300, 0)
 t2.pd()
 
 t2.bgcolor('skyblue')
-
 t2.fillcolor('yellow')
 
 t2.begin_fill()
