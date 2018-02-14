@@ -90,7 +90,7 @@ class SvgPolyline(SvgElement):
 
 class SvgPath(SvgElement):
 
-    def __init__(self, start_pt=None, attributes=None):
+    def __init__(self, d_list, attributes=None):
         # d属性は基本的に指定せずに使うべきだが，
         # 一部指定したい場合のために切り取る
         self.d_head = '　d="'
@@ -98,9 +98,7 @@ class SvgPath(SvgElement):
             self.d_head += attributes['d']
             del attributes['d']
         super().__init__(name='path', attributes=attributes)
-        self.d_list = []
-        if start_pt:
-            self.d_list.append(('M', start_pt[0], start_pt[1]))
+        self.d_list = d_list
         self.d_foot = '"'
 
     def append_d(self, d_tuple):
