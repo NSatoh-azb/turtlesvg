@@ -93,7 +93,7 @@ class SvgPath(SvgElement):
     def __init__(self, d_list, attributes=None):
         # d属性は基本的に指定せずに使うべきだが，
         # 一部指定したい場合のために切り取る
-        self.d_head = '　d="'
+        self.d_head = ' d="'
         if attributes and 'd' in attributes:
             self.d_head += attributes['d']
             del attributes['d']
