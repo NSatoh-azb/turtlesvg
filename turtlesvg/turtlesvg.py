@@ -2276,9 +2276,95 @@ class Polygon(TurtlePicture):
 
 class Path(TurtlePicture):
     
-    def __init__(self, start_pt=None):
+    def __init__(self, start_pt=None, filling=False):
         super().__init__(start_pt)
+        
+        self.d_list = []
+        if start_pt:
+            self.append_pt(start_pt)
+        self.filling = filling
     
+    def append_pt(self, pt):
+        self.d_list.append(DM(pt[0], pt[1]))
+    
+    def append_d(self, d_attr_obj):
+        self.d_list.append(d_attr_obj)
+
+    def close_path(self):
+        self.d_list.append(DAttrObj('Z'))
+        
+    def get_svg_path(self, unit_width=0.5, unit_length=1):
+        pen = self.get_pen()
+        if self.filling:
+            fillcolor = pen['fillcolor']
+        else:
+            fillcolor = 'none'
+        attrs = {
+                'stroke-width': pen['pensize'] * unit_width,
+                #TODO 'red'とか'blue'でないRGB指定をサポートしたい
+                'fill' : fillcolor,
+                'stroke' : pen['pencolor']
+                }
+
+        ul = unit_length
+        
+        d_taples = []
+        for d in self.d_list:
+            d_taples.append(d.get_d_tuple(ul, -1))
+        svg_path = svg.SvgPath(d_taples, attrs)
+
+        return svg_path
+
+class DAttrObj():
+    '''
+    svg path の d属性の中身
+      DM: "M x y "
+      DA: "A rx ry start f1 f2 x2 y2 "
+      を想定
+    '''
+    def __init__(self, name, items=[]):
+        self.name = name
+        self.items = items
+    
+    def get_d_tuple(self, ul=1, y_sgn=-1):
+        '''
+        ("M", real_x, real_y)
+        ("A", real_rx, real_rx, start, f1, f2, real_x, real_y)
+        のようなものを返す
+        '''
+        return tuple([self.name] + self.items)
+
+class DM(DAttrObj):
+    '''
+    M x y 
+    '''
+    def __init__(self, x, y):
+        super().__init__('M')
+        self.x = x
+        self.y = y
+    
+    def get_d_tuple(self, ul=1, y_sgn=-1):
+        return ('M', self.x*ul, self.y*ul*y_sgn)
+        
+class DA(DAttrObj):    
+    '''
+    A  rx ry start f1 f2 x2 y2
+    '''
+    def __init__(self, rx, ry, start, f1, f2, x, y):
+        super().__init__('A')
+        self.rx = rx
+        self.ry = ry
+        self.start = start
+        self.f1 = f1
+        self.f2 = f2
+        self.x = x
+        self.y = y
+    
+    def get_d_tuple(self, ul=1, y_sgn=-1):
+        return ('A', self.rx*ul, self.ry*ul, 
+                     self.start, self.f1, self.f2,
+                     self.x*ul, self.y*ul*y_sgn)
+
 
 class Circle(TurtlePicture):
 
@@ -2286,8 +2372,14 @@ class Circle(TurtlePicture):
         super().__init__(start_pt)
 
 
-class Arc(TurtlePicture):
-
-    def __init__(self, start_pt=None):
-        super().__init__(start_pt)
+if __name__ == '__main__':
+    ttl_path = Path((100,100))
+    ttl_path.append_d(DM(200,100))
+    ttl_path.append_d(DA(300,300,0,0,0,500,500))
+    ttl_path.close_path()
+    t = MyTurtle()
+    ttl_path.set_pen(t.pen())
+    a = ttl_path.get_svg_path()
+    print(a.get_svg())
+    
 
