@@ -427,7 +427,8 @@ class MyTurtle():
         >>> turtle.heading()
         180.0
         '''
-        #TODO: support
+        # polylineを閉じて、circleまたはpathを追加し、再びpolylineを開始。
+        #TODO: 本来、polylineをpathで実装していれば、弧の場合にpolylineを閉じる必要はない。
         print("Sorry. This command is unsupported...")
 
 
@@ -2269,6 +2270,23 @@ class Polyline(TurtlePicture):
 
 
 class Polygon(TurtlePicture):
+
+    def __init__(self, start_pt=None):
+        super().__init__(start_pt)
+
+class Path(TurtlePicture):
+    
+    def __init__(self, start_pt=None):
+        super().__init__(start_pt)
+    
+
+class Circle(TurtlePicture):
+
+    def __init__(self, start_pt=None):
+        super().__init__(start_pt)
+
+
+class Arc(TurtlePicture):
 
     def __init__(self, start_pt=None):
         super().__init__(start_pt)
