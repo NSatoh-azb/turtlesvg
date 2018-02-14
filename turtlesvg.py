@@ -52,15 +52,24 @@ class MyTurtle():
         self._position = self.__turtle.position()
         self._heading  = self.__turtle.heading()
 
+        #tikz用にpolylineを生き残らせている
+        #TODO 将来的にはpolylineは削除したい
         self.__polylines = []
-        self.__polygons = []
+        
+        # 線のみをpathで，塗りのみをfill_pathで，独立に管理
+        # 従って，pendowsかつfillingのときには両方に点を追加していく
+        self.__paths = []
+        self.__fill_paths = []
 
         self._polyline_init()
+        self._path_init()
 
         self._x_min = 0
         self._x_max = 0
         self._y_min = 0
         self._y_max = 0
+
+        self.back_ground_color = None
 
     # -----------------------------------------------------
     def test(self):
@@ -70,26 +79,33 @@ class MyTurtle():
         print('    {}\n'.format(self._heading))
         print('polylines:')
         print('    {} polyline objects.\n'.format(len(self.__polylines)))
-        print('polygons:')
-        print('    {} polygon objects.\n'.format(len(self.__polygons)))
+        print('paths:')
+        print('    {} polygon objects.\n'.format(len(self.__paths)))
+        print('fill_paths:')
+        print('    {} polygon objects.\n'.format(len(self.__fill_paths)))
 
 
     def _on_move(self):
 
         if self.isdown():
             self.__polyline.push_point(self.pos())
+            self.__path.append_line_to(self.pos())
             self._update_canvas_size()
 
         if self.filling():
             # penのUp/Down状態は関係ない
-            self.__polygon.push_point(self.pos())
+            self.__fill_path.append_line_to(self.pos())
             self._update_canvas_size()
-
 
     def _polyline_init(self):
         self.__polyline = Polyline(self.pos())
 
+    def _path_init(self):
+        self.__path = Path(self.pos())
 
+    def _fill_path_init(self):
+        self.__fill_path = Path(self.pos(), filling=True)
+        
     def _polyline_terminate(self):
         '''
         polylineを閉じる．
@@ -101,43 +117,54 @@ class MyTurtle():
         やるべきだろう．
         '''
         self.__polyline.set_pen(self.pen())
-        self.__polylines += [self.__polyline]
+        self.__polylines.append(self.__polyline)
 
-
-    def _polygon_init(self):
-        self.__polygon = Polygon(self.pos())
-
-
-    def _polygon_terminate(self):
+    #TODO d_tuplesが('M', x, y)のみの場合は削除させたい
+    def _path_terminate(self):
         '''
-        現在のペン状態をPolygonオブジェクトに記憶させたのち，
-        Polygonオブジェクトをリストの末尾に格納する．
-        Polygonオブジェクトの破棄は行わないので，_polygon_init()が
-        呼び出される前なら，リストの末尾を除外することで続きからpolygonを作り続けられはする．
-        が，閉じたpolygonを再開させるなら，__polygons.pop()でPolylineオブジェクトを受け取って
+        pathの記録を終了．
+        現在のペン状態をPathオブジェクトに記憶させたのち，
+        Pathオブジェクトをリストの末尾に格納する．
+        Pathオブジェクトの破棄は行わないので，_path_init()が
+        呼び出される前なら，リストの末尾を除外することで続きからpathを作り続けられはする．
+        が，閉じたpathを再開させるなら，__polylines.pop()でPathオブジェクトを受け取って
         やるべきだろう．
         '''
-        self.__polygon.set_pen(self.pen())
-        self.__polygons += self.__polygon
+        self.__path.set_pen(self.pen())
+        self.__paths.append(self.__path)
+
+
+    def _fill_path_terminate(self):
+        self.__fill_path.set_pen(self.pen())
+        self.__fill_path.close_path()
+        self.__fill_paths.append(self.__fill_path)
 
 
     def _restore_polyline(self):
         self.__polyline = self.__polylines.pop()
 
+    def _restore_path(self):
+        self.__path = self.__paths.pop()
+
+    def _restore_fill_path(self):
+        self.__fill_path = self.__fill_paths.pop()
 
     def _clear_pictures(self):
         self.__polylines = []
-        self.__polygons = []
+        self.__paths = []
+        self.__fill_paths = []
         self._polyline_init()
+        self._path_init()
 
 
     def get_polylines(self):
         return self.__polylines
+    
+    def get_paths(self):
+        return self.__paths
 
-
-    def get_polygons(self):
-        return self.__polygons
-
+    def get_fill_paths(self):
+        return self.__fill_paths
 
     def get_canvas_size(self):
         return (self._x_min, self._x_max, self._y_min, self._y_max)
@@ -154,9 +181,12 @@ class MyTurtle():
         elif y > self._y_max:
             self._y_max = y
 
+    def _set_bgcolor(self, color):
+        self.back_ground_color = color
+        
     def save_as_svg(self, filename=None, 
                  unit_width=1, unit_length=1, margin=5, 
-                 background=None):
+                 bg_color=None):
         '''
         タートルグラフィックスの実行結果を，SVG画像として保存する．
         
@@ -164,7 +194,7 @@ class MyTurtle():
         :param unit_width:  線の太さ
         :param unit_length: 単位長さ
         :param margin:      画像外周の余白幅
-        :param background:  背景色
+        :param bg_color:    背景色
         
         ・ファイル名を指定せず実行すると，
          「turtlesvg_output_日付時刻.svg」に保存
@@ -179,24 +209,36 @@ class MyTurtle():
         svg_svg = svg.Svg(w=w, h=h, x0=x0, y0=-y0, vb_w=w, vb_h=h)
         
         # 背景色指定があれば、その色のrectを生成
-        if background:
+        if not bg_color and self.back_ground_color:
+            bg_color = self.back_ground_color
+        if bg_color:
             bg_rect = svg.SvgElement('rect', {
                     'x'      : x0, 
                     'y'      : -y0, 
                     'width'  : w, 
                     'height' : h,
-                    'fill'   : background
+                    'fill'   : bg_color
                     })
             svg_svg.append_element(bg_rect)
         
-        for pl in self.__polylines:
-            svg_pl = pl.get_svg_polyline(unit_width=unit_width, unit_length=unit_length)
-            svg_svg.append_element(svg_pl)
+        # fillが先
+        for fp in self.__fill_paths:
+            svg_elem = fp.get_svg_path(unit_width=unit_width, unit_length=unit_length)
+            svg_svg.append_element(svg_elem)
+
+        for p in self.__paths:
+            svg_elem = p.get_svg_path(unit_width=unit_width, unit_length=unit_length)
+            svg_svg.append_element(svg_elem)
+
+        #for pl in self.__polylines:
+        #    svg_elem = pl.get_svg_polyline(unit_width=unit_width, unit_length=unit_length)
+        #    svg_svg.append_element(svg_elem)
         
         svg_str = svg_svg.get_svg()
         
         if filename == None:
-            time_str = datetime.strftime("%Y-%m%d-%H%M-%S")
+            dt = datetime.date.today()
+            time_str = dt.strftime("%Y-%m%d-%H%M-%S")
             filename = f'turtlesvg_output_{time_str}.svg'
         
         with open(filename, "w") as f:
@@ -710,6 +752,7 @@ class MyTurtle():
         '''
         self.__turtle.pendown()
         self._polyline_init()
+        self._path_init()
 
     pd = pendown
     down = pendown
@@ -723,6 +766,7 @@ class MyTurtle():
         '''
         self.__turtle.penup()
         self._polyline_terminate()
+        self._path_terminate()
 
     pu = penup
     up = penup
@@ -881,6 +925,8 @@ class MyTurtle():
             self.__turtle.pencolor(*args)
             self._polyline_terminate()
             self._polyline_init()
+            self._path_terminate()
+            self._path_init()
 
 
 
@@ -977,7 +1023,7 @@ class MyTurtle():
         To be called just before drawing a shape to be filled.
 
         '''
-        self._polygon_init()
+        self._fill_path_init()
         self.__turtle.begin_fill()
 
 
@@ -992,9 +1038,8 @@ class MyTurtle():
         >>> turtle.end_fill()
         24.1.3.4.4. さらなる描画の制御
         '''
-        self._polygon_terminate()
+        self._fill_path_terminate()
         self.__turtle.end_fill()
-
 
 
     def reset(self):
@@ -1484,8 +1529,9 @@ class MyTurtle():
         >>> screen.bgcolor()
         (128.0, 0.0, 128.0)
         '''
-        pass
-
+        self.__turtle.screen.bgcolor(*args)
+        if args:
+            self._set_bgcolor(*args)
 
 
     def bgpic(self, picname=None):
@@ -2286,6 +2332,9 @@ class Path(TurtlePicture):
     
     def append_pt(self, pt):
         self.d_list.append(DM(pt[0], pt[1]))
+
+    def append_line_to(self, pt):
+        self.d_list.append(DL(pt[0], pt[1]))
     
     def append_d(self, d_attr_obj):
         self.d_list.append(d_attr_obj)
@@ -2297,6 +2346,7 @@ class Path(TurtlePicture):
         pen = self.get_pen()
         if self.filling:
             fillcolor = pen['fillcolor']
+            pen['pencolor'] = 'none'
         else:
             fillcolor = 'none'
         attrs = {
@@ -2345,6 +2395,18 @@ class DM(DAttrObj):
     
     def get_d_tuple(self, ul=1, y_sgn=-1):
         return ('M', self.x*ul, self.y*ul*y_sgn)
+
+class DL(DAttrObj):
+    '''
+    L x y 
+    '''
+    def __init__(self, x, y):
+        super().__init__('L')
+        self.x = x
+        self.y = y
+    
+    def get_d_tuple(self, ul=1, y_sgn=-1):
+        return ('L', self.x*ul, self.y*ul*y_sgn)
         
 class DA(DAttrObj):    
     '''
@@ -2372,14 +2434,48 @@ class Circle(TurtlePicture):
         super().__init__(start_pt)
 
 
-if __name__ == '__main__':
-    ttl_path = Path((100,100))
-    ttl_path.append_d(DM(200,100))
-    ttl_path.append_d(DA(300,300,0,0,0,500,500))
-    ttl_path.close_path()
-    t = MyTurtle()
-    ttl_path.set_pen(t.pen())
-    a = ttl_path.get_svg_path()
-    print(a.get_svg())
     
+def koch_r(t, length, n):
+    if n == 0:
+        t.fd(length)
+    else:
+        koch_r(t, length/3, n-1)
+        t.right(60)
+        koch_r(t, length/3, n-1)
+        t.left(120)
+        koch_r(t, length/3, n-1)
+        t.right(60)
+        koch_r(t, length/3, n-1)
+    
+t2 = MyTurtle()
+t2.tracer(0)
+t2.speed(10)
+
+t2.pu()
+t2.goto(300, 0)
+t2.pd()
+
+t2.bgcolor('skyblue')
+
+t2.fillcolor('yellow')
+
+t2.begin_fill()
+k = 1
+t2.right(72)
+t2.pencolor('red')
+colors = ['blue', 'red', 'green', 'purple']
+koch_r(t2, 300, k)
+for i in range(4):
+    t2.right(144)
+    t2.pencolor(colors[i])
+    koch_r(t2, 300, k)
+
+t2.end_fill()
+
+t2.pu()
+t2.update()
+t2.save_as_svg('koch_star.svg')
+
+
+
 
