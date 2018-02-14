@@ -87,3 +87,43 @@ class SvgPolyline(SvgElement):
         svg += self.foot
         return svg
 
+
+class SvgPath(SvgElement):
+
+    def __init__(self, start_pt=None, attributes=None):
+        # d属性は基本的に指定せずに使うべきだが，
+        # 一部指定したい場合のために切り取る
+        self.d_head = '　d="'
+        if attributes and 'd' in attributes:
+            self.d_head += attributes['d']
+            del attributes['d']
+        super().__init__(name='path', attributes=attributes)
+        self.d_list = []
+        if start_pt:
+            self.d_list.append(('M', start_pt[0], start_pt[1]))
+        self.d_foot = '"'
+
+    def append_d(self, d_tuple):
+        self.d_list.append(d_tuple)  
+        
+    def gen_d_str(self):
+        d_body = ''
+        for d_tuple in self.d_list:
+            for elem in d_tuple:
+                if type(elem) == float:
+                    d_body += f'{elem:.6f} ' # 6桁で丸めるくらいで大丈夫だろう
+                else:
+                    d_body += f'{elem} '
+        # d_bodyは末尾にもスペースがついているので、return前に削除
+        return self.d_head + d_body[:-1] + self.d_foot
+    
+    def get_svg(self):
+        svg = self.head_begin
+        svg += self.gen_d_str()
+        svg += self.head_body
+        svg += self.head_end
+        svg += self.data
+        svg += self.foot
+        return svg
+
+
