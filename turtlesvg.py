@@ -1,6 +1,7 @@
 import turtle
 import svgutl.svgutl as svg
 import datetime
+import math
 
 class MyTurtle():
     '''
@@ -55,13 +56,13 @@ class MyTurtle():
         #tikz用にpolylineを生き残らせている
         #TODO 将来的にはpolylineは削除したい
         self.__polylines = []
+        self._polyline_init()
         
         # 線のみをpathで，塗りのみをfill_pathで，独立に管理
         # 従って，pendowsかつfillingのときには両方に点を追加していく
+        #TODO 名前変更： pathsという名前なのに，Path だけでなく Circle も格納するのはどうなんだ
         self.__paths = []
         self.__fill_paths = []
-
-        self._polyline_init()
         self._path_init()
 
         self._x_min = 0
@@ -70,19 +71,6 @@ class MyTurtle():
         self._y_max = 0
 
         self.back_ground_color = None
-
-    # -----------------------------------------------------
-    def test(self):
-        print('position:')
-        print('    {}\n'.format(self._position))
-        print('heading:')
-        print('    {}\n'.format(self._heading))
-        print('polylines:')
-        print('    {} polyline objects.\n'.format(len(self.__polylines)))
-        print('paths:')
-        print('    {} polygon objects.\n'.format(len(self.__paths)))
-        print('fill_paths:')
-        print('    {} polygon objects.\n'.format(len(self.__fill_paths)))
 
 
     def _on_move(self):
@@ -119,7 +107,7 @@ class MyTurtle():
         self.__polyline.set_pen(self.pen())
         self.__polylines.append(self.__polyline)
 
-    #TODO d_tuplesが('M', x, y)のみの場合は削除させたい
+
     def _path_terminate(self):
         '''
         pathの記録を終了．
@@ -225,15 +213,15 @@ class MyTurtle():
         
         # fillが先
         for fp in self.__fill_paths:
-            svg_elem = fp.get_svg_path(unit_width=unit_width, unit_length=unit_length)
+            svg_elem = fp.get_svg(unit_width=unit_width, unit_length=unit_length)
             svg_svg.append_element(svg_elem)
 
         for p in self.__paths:
-            svg_elem = p.get_svg_path(unit_width=unit_width, unit_length=unit_length)
+            svg_elem = p.get_svg(unit_width=unit_width, unit_length=unit_length)
             svg_svg.append_element(svg_elem)
 
         #for pl in self.__polylines:
-        #    svg_elem = pl.get_svg_polyline(unit_width=unit_width, unit_length=unit_length)
+        #    svg_elem = pl.get_svg(unit_width=unit_width, unit_length=unit_length)
         #    svg_svg.append_element(svg_elem)
         
         svg_str = svg_svg.get_svg()
@@ -471,9 +459,55 @@ class MyTurtle():
         >>> turtle.heading()
         180.0
         '''
-        # polylineを閉じて、circleまたはpathを追加し、再びpolylineを開始。
-        #TODO: 本来、polylineをpathで実装していれば、弧の場合にpolylineを閉じる必要はない。
-        print("Sorry. This command is unsupported...")
+        if not steps: # 正確な全円または円弧の場合        
+            
+            if extent and abs(extent) < 360: # 円弧
+                self.__turtle.circle(radius, extent)
+                pt = self.pos()
+                
+                if abs(extent) < 180:
+                    large_arc_flag = 0
+                else:
+                    large_arc_flag = 1
+
+                if extent < 0:
+                    sweep_flag = 1
+                else:
+                    sweep_flag = 0
+                
+                self._on_arc_move(radius, radius, 
+                                  0, large_arc_flag, sweep_flag,
+                                  pt[0], pt[1])
+            else: # 全円以上は，半円以下を繰り返し描かせる
+                if extent is None:
+                    extent = 360
+
+                # 符号判断しないと無限ループするだろ，という渡辺さんの指摘・・・！
+                if extent < 0:
+                    sgn = -1
+                else:
+                    sgn = 1
+                self.circle(radius, 180*sgn)
+                self.circle(radius, extent - 180*sgn)
+
+        else: # 多角形近似の場合
+            d_angle = abs(extent) / steps
+            l = 2*radius * math.sin(math.radians(d_angle))
+            for i in range(steps):
+                self.left(d_angle)
+                self.forward(l)
+            
+        
+    def _on_arc_move(self, rx, ry, start, f1, f2, x, y):
+        if self.isdown():
+            self.__path.append_arc(rx, ry, start, f1, f2, x, y)
+            # 弧の途中の点でcanvas_sizeが補正されないので，はみ出すかも．
+            self._update_canvas_size()
+
+        if self.filling():
+            # penのUp/Down状態は関係ない
+            self.__fill_path.append_arc(rx, ry, start, f1, f2, x, y)
+            self._update_canvas_size()
 
 
 
@@ -2247,7 +2281,7 @@ class TurtlePicture:
         else:
             self.__points = [start_pt]
 
-    def get_svg_form(self):
+    def get_svg(self):
         pass
 
     def set_pen(self, pen):
@@ -2269,7 +2303,7 @@ class Polyline(TurtlePicture):
         super().__init__(start_pt)
 
 
-    def get_svg_polyline(self, unit_width=0.5, unit_length=1):
+    def get_svg(self, unit_width=0.5, unit_length=1):
         pen = self.get_pen()
         attrs = {
                 'stroke-width': pen['pensize'] * unit_width,
@@ -2317,11 +2351,6 @@ class Polyline(TurtlePicture):
         return tikz
 
 
-class Polygon(TurtlePicture):
-
-    def __init__(self, start_pt=None):
-        super().__init__(start_pt)
-
 class Path(TurtlePicture):
     
     def __init__(self, start_pt=None, filling=False):
@@ -2338,13 +2367,16 @@ class Path(TurtlePicture):
     def append_line_to(self, pt):
         self.d_list.append(DL(pt[0], pt[1]))
     
+    def append_arc(self, rx, ry, start, f1, f2, x, y):
+        self.d_list.append(DA(rx, ry, start, f1, f2, x, y))
+    
     def append_d(self, d_attr_obj):
         self.d_list.append(d_attr_obj)
 
     def close_path(self):
         self.d_list.append(DAttrObj('Z'))
         
-    def get_svg_path(self, unit_width=0.5, unit_length=1):
+    def get_svg(self, unit_width=0.5, unit_length=1):
         pen = self.get_pen()
         if self.filling:
             fillcolor = pen['fillcolor']
@@ -2430,53 +2462,8 @@ class DA(DAttrObj):
                      self.x*ul, self.y*ul*y_sgn)
 
 
-class Circle(TurtlePicture):
 
-    def __init__(self, start_pt=None):
-        super().__init__(start_pt)
-
-
-    
-def koch_r(t, length, n):
-    if n == 0:
-        t.fd(length)
-    else:
-        koch_r(t, length/3, n-1)
-        t.right(60)
-        koch_r(t, length/3, n-1)
-        t.left(120)
-        koch_r(t, length/3, n-1)
-        t.right(60)
-        koch_r(t, length/3, n-1)
-    
-t2 = MyTurtle()
-t2.tracer(0)
-t2.speed(10)
-
-t2.pu()
-t2.goto(300, 0)
-t2.pd()
-
-t2.bgcolor('skyblue')
-t2.fillcolor('yellow')
-
-t2.begin_fill()
-k = 1
-t2.right(72)
-t2.pencolor('red')
-colors = ['blue', 'red', 'green', 'purple']
-koch_r(t2, 300, k)
-for i in range(4):
-    t2.right(144)
-    t2.pencolor(colors[i])
-    koch_r(t2, 300, k)
-
-t2.end_fill()
-
-t2.pu()
-t2.update()
-t2.save_as_svg('koch_star.svg')
-
+ 
 
 
 
