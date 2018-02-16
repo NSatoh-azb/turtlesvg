@@ -123,5 +123,4 @@ class SvgPath(SvgElement):
         svg += self.data
         svg += self.foot
         return svg
-
-
+    
