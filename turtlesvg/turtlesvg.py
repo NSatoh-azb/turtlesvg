@@ -824,10 +824,14 @@ class MyTurtle():
             return self.__turtle.pensize()
 
         # width変更があった場合はpolylineを閉じる
-        elif self.isdown():
+        else:
             self.__turtle.pensize(width)
-            self._polyline_terminate()
-            self._polyline_init()
+            
+            if self.isdown():
+                self._polyline_terminate()
+                self._polyline_init()
+                self._path_terminate()
+                self._path_init()
 
     width = pensize
 
