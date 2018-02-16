@@ -824,14 +824,13 @@ class MyTurtle():
             return self.__turtle.pensize()
 
         # width変更があった場合はpolylineを閉じる
-        else:
-            self.__turtle.pensize(width)
-            
+        else:            
             if self.isdown():
                 self._polyline_terminate()
                 self._polyline_init()
                 self._path_terminate()
                 self._path_init()
+            self.__turtle.pensize(width)
 
     width = pensize
 
@@ -961,14 +960,13 @@ class MyTurtle():
             return self.__turtle.pencolor()
 
         else:
-            self.__turtle.pencolor(*args)
-
             # 色変更があった場合はpolylineを閉じる
             if self.isdown():
                 self._polyline_terminate()
                 self._polyline_init()
                 self._path_terminate()
                 self._path_init()
+            self.__turtle.pencolor(*args)
 
 
 
