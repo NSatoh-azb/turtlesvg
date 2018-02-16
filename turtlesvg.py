@@ -1599,7 +1599,8 @@ class MyTurtle():
         注釈 この TurtleScreen メソッドはグローバル関数としては clearscreen という名前でだけ使えます。
         グローバル関数 clear は Turtle メソッドの clear から派生した別ものです。
         '''
-        pass
+        self.__turtle.screen.clearscreen()
+        self.__init__()
 
 
 
