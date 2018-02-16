@@ -956,13 +956,15 @@ class MyTurtle():
         if args == ():
             return self.__turtle.pencolor()
 
-        # 色変更があった場合はpolylineを閉じる
-        elif self.isdown():
+        else:
             self.__turtle.pencolor(*args)
-            self._polyline_terminate()
-            self._polyline_init()
-            self._path_terminate()
-            self._path_init()
+
+            # 色変更があった場合はpolylineを閉じる
+            if self.isdown():
+                self._polyline_terminate()
+                self._polyline_init()
+                self._path_terminate()
+                self._path_init()
 
 
 
