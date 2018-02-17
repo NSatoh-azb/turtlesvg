@@ -13,13 +13,13 @@ def koch(n, l):
     if n == 0:
         t.fd(l)
     else:
-        t.koch(n-1, l/3)
+        koch(n-1, l/3)
         # 向きを変える
-        t.koch(n-1, l/3)
+        koch(n-1, l/3)
         # 向きを変える
-        t.koch(n-1, l/3)
+        koch(n-1, l/3)
         # 向きを変える
-        t.koch(n-1, l/3)
+        koch(n-1, l/3)
 
 t.penup()
 t.goto(-300,-200)
