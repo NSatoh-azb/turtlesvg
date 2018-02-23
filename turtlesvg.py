@@ -545,10 +545,10 @@ class MyTurtle():
             c = self.__turtle.pencolor()
             if type(c) is tuple:
                 [r, g, b] = [int(c[i]*255) for i in range(3)] 
-                c = f'#{r:x}{g:x}{b:x}'
+                c = f'#{r:0>2x}{g:0>2x}{b:0>2x}'
         elif len(color) == 3:
             [r, g, b] = [int(color[i]*255) for i in range(3)] 
-            c = f'#{r:x}{g:x}{b:x}'
+            c = f'#{r:0>2x}{g:0>2x}{b:0>2x}'
         else:
             c = color[0]
             
@@ -2504,32 +2504,3 @@ class Circles:
     
     def append_circle(self, circle_tuple):
         self.circles.append(circle_tuple)
-
-#-------------------------------------------------
-
-if __name__ == '__main__':
-    t = MyTurtle()
-    t.penup()
-    t.speed(10)
-    t.tracer(0)
-    
-    # canvas sizeがdotだけでは更新されない問題
-    t.goto(200, 200)
-    #t.pd()
-    #t.goto(200, -200)
-    #t.goto(-200, -200)
-    #t.goto(-200, 200)
-    #t.goto(200, 200)
-    #t.pu()
-
-    for i in range(360):
-        c = math.cos(math.radians(i))
-        s = math.sin(math.radians(i))
-        r = (i**2)/100
-        size = i/10
-        t.goto(r*c, r*s)
-        t.dot(size, i/360, 0.5, i/720)
-
-    t.update()    
-    t.save_as_svg('dot_test.svg')
-    
