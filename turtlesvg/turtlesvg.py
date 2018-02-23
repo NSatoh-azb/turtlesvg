@@ -59,11 +59,13 @@ class MyTurtle():
         self._polyline_init()
         
         # 線のみをpathで，塗りのみをfill_pathで，独立に管理
-        # 従って，pendowsかつfillingのときには両方に点を追加していく
-        #TODO 名前変更： pathsという名前なのに，Path だけでなく Circle も格納するのはどうなんだ
+        # 従って，pendownかつfillingのときには両方に点を追加していく
         self.__paths = []
         self.__fill_paths = []
         self._path_init()
+
+        # dot管理用
+        self.circles = Circles()
 
         self._x_min = 0
         self._x_max = 0
@@ -159,17 +161,19 @@ class MyTurtle():
     def get_canvas_size(self):
         return (self._x_min, self._x_max, self._y_min, self._y_max)
 
-    def _update_canvas_size(self):
+    def _update_canvas_size(self, line_width=None):
+        if line_width is None:
+            line_width = self.__turtle.pensize()
         (x, y) = self.pos()
-        if x < self._x_min:
-            self._x_min = x
-        elif x > self._x_max:
-            self._x_max = x
+        if x - line_width < self._x_min:
+            self._x_min = x - line_width 
+        elif x + line_width  > self._x_max:
+            self._x_max = x + line_width 
 
-        if y < self._y_min:
-            self._y_min = y
-        elif y > self._y_max:
-            self._y_max = y
+        if y - line_width  < self._y_min:
+            self._y_min = y - line_width 
+        elif y + line_width  > self._y_max:
+            self._y_max = y + line_width 
 
     def _set_bgcolor(self, color):
         self.back_ground_color = color
@@ -211,7 +215,7 @@ class MyTurtle():
                     })
             svg_svg.append_element(bg_rect)
         
-        # fillが先
+        # fillが先　# 本当はタートルの描画順通りにするか選べる方が良いか．
         for fp in self.__fill_paths:
             svg_elem = fp.get_svg(unit_width=unit_width, unit_length=unit_length)
             svg_svg.append_element(svg_elem)
@@ -223,6 +227,9 @@ class MyTurtle():
         #for pl in self.__polylines:
         #    svg_elem = pl.get_svg(unit_width=unit_width, unit_length=unit_length)
         #    svg_svg.append_element(svg_elem)
+
+        svg_circles = svg.SvgCircles(self.circles)
+        svg_svg.append_element_str(svg_circles.get_svg())
         
         svg_str = svg_svg.get_svg()
         
@@ -526,9 +533,28 @@ class MyTurtle():
         >>> turtle.heading()
         0.0
         '''
-        #TODO: support
-        print("Sorry. This command is unsupported...")
-
+        self.__turtle.dot(size, *color)
+        
+        if size is None:
+            ps = self.__turtle.pensize()
+            size = max(ps+4, 2*ps)
+        
+        # 空なら pencolorの取得は必要だが，rgb変換は
+        # 本来 svgutl 側にやらせるべきか（タートル自身の動作が重くなる可能性があるので）
+        if color == ():
+            c = self.__turtle.pencolor()
+            if type(c) is tuple:
+                [r, g, b] = [int(c[i]*255) for i in range(3)] 
+                c = f'#{r:x}{g:x}{b:x}'
+        elif len(color) == 3:
+            [r, g, b] = [int(color[i]*255) for i in range(3)] 
+            c = f'#{r:x}{g:x}{b:x}'
+        else:
+            c = color[0]
+            
+        p = self.__turtle.pos()
+        self.circles.append_circle((p[0], p[1], size, c))
+        self._update_canvas_size(size)
 
 
     def stamp(self):
@@ -2307,7 +2333,8 @@ class Polyline(TurtlePicture):
     def __init__(self, start_pt=None):
         super().__init__(start_pt)
 
-
+    # TODO: このあたりは，本来TurtlePictureに持たせる機能ではなく 
+    # SvgElementの機能でTurtlePictureを受け取って処理するべきだろう
     def get_svg(self, unit_width=0.5, unit_length=1):
         pen = self.get_pen()
         attrs = {
@@ -2390,7 +2417,6 @@ class Path(TurtlePicture):
             fillcolor = 'none'
         attrs = {
                 'stroke-width': pen['pensize'] * unit_width,
-                #TODO 'red'とか'blue'でないRGB指定をサポートしたい
                 'fill' : fillcolor,
                 'stroke' : pen['pencolor']
                 }
@@ -2466,9 +2492,44 @@ class DA(DAttrObj):
                      self.start, self.f1, self.f2,
                      self.x*ul, self.y*ul*y_sgn)
 
+class Circles:
+    '''
+    circle 1個1個をCircleオブジェクトみたいに作ると，
+    dotを大量に描画した場合などにおそらく重すぎる．
+    (cx, cy, radius, color)のリストを保持させて，
+    get_svgで一気に出力させる．
+    '''
+    def __init__(self):
+        self.circles = []
+    
+    def append_circle(self, circle_tuple):
+        self.circles.append(circle_tuple)
 
+#-------------------------------------------------
 
- 
+if __name__ == '__main__':
+    t = MyTurtle()
+    t.penup()
+    t.speed(10)
+    t.tracer(0)
+    
+    # canvas sizeがdotだけでは更新されない問題
+    t.goto(200, 200)
+    #t.pd()
+    #t.goto(200, -200)
+    #t.goto(-200, -200)
+    #t.goto(-200, 200)
+    #t.goto(200, 200)
+    #t.pu()
 
+    for i in range(360):
+        c = math.cos(math.radians(i))
+        s = math.sin(math.radians(i))
+        r = (i**2)/100
+        size = i/10
+        t.goto(r*c, r*s)
+        t.dot(size, i/360, 0.5, i/720)
 
-
+    t.update()    
+    t.save_as_svg('dot_test.svg')
+    
