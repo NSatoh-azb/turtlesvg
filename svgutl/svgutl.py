@@ -17,6 +17,9 @@ class Svg:
     def append_element(self, svg_element):
         self.body += svg_element.get_svg() + '\n'
 
+    def append_element_str(self, svg_str):
+        self.body += svg_str + '\n'
+
     def get_svg(self):
         svg = self.head
         svg += self.body
@@ -116,7 +119,7 @@ class SvgPath(SvgElement):
         return self.d_head + d_body[:-1] + self.d_foot
     
     def get_svg(self):
-        svg = self.head_begin
+        svg  = self.head_begin
         svg += self.gen_d_str()
         svg += self.head_body
         svg += self.head_end
@@ -124,3 +127,28 @@ class SvgPath(SvgElement):
         svg += self.foot
         return svg
     
+
+class SvgCircles():
+    '''
+    turtle.dot()の点たちに対応させる想定．
+    '''
+    def __init__(self, turtle_circles):
+        self.turtle_circles = turtle_circles
+    
+    def get_svg(self, unit_length=1):
+        '''
+        簡易実装版．
+        出力のファイルサイズを小さくするために，本来はrやcolorを監視して，
+        更新されるまでは1つの<g>の中に入れていくべきだろう．
+        '''
+        svg = ''
+        for c_tuple in self.turtle_circles.circles:
+            (cx, cy, r, color) = c_tuple
+            cx *=  unit_length
+            cy *= -unit_length # y座標は反転
+            r  *=  unit_length
+            svg += f'  <circle cx="{cx}" cy="{cy}" r="{r}" fill="{color}"/>\n'
+
+        return svg
+        
+
