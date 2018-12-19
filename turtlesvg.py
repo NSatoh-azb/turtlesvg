@@ -3,7 +3,7 @@ import svgutl.svgutl as svg
 import datetime
 import math
 
-class MyTurtle():
+class Turtle():
     '''
 　　  spyderなど、IPython環境では、マジックコマンド
     
@@ -14,9 +14,9 @@ class MyTurtle():
   　　-+-+- 使い方 -+-+-
     
       　　import trutlesvg as ttl
-      　　t = ttl.MyTurtle()
+      　　t = ttl.Turtle()
       
-    　　として、MyTurtleオブジェクト t を生成する。
+    　　として、Turtleオブジェクト t を生成する。
    　　 以下、
       
      　　 t.forward(100)
@@ -1423,13 +1423,13 @@ class MyTurtle():
         fun をタートルのマウスボタンリリース(mouse-button-release)イベントに束縛します。
         fun が None ならば、既存の束縛が取り除かれます。
 
-        >>> class MyTurtle(Turtle):
+        >>> class Turtle(Turtle):
         ...     def glow(self,x,y):
         ...         self.fillcolor("red")
         ...     def unglow(self,x,y):
         ...         self.fillcolor("")
         ...
-        >>> turtle = MyTurtle()
+        >>> turtle = Turtle()
         >>> turtle.onclick(turtle.glow)     # clicking on turtle turns fillcolor red,
         >>> turtle.onrelease(turtle.unglow) # releasing turns it to transparent.
         '''
@@ -2300,6 +2300,17 @@ class MyTurtle():
         のを阻止します。
 
         '''
+
+class MyTurtle(Turtle):
+    '''
+    最初，オリジナルのTurtle特別するためにMyTurtleという名前で作り始めたが，
+    やはりMyとか付けとくのはあまりよくないので，改名した．
+    旧バージョンとの互換を保つための子クラス
+    '''
+    def __init__(self):
+        super().__init__()
+        print('Class "MyTurtle" is obsolete. Use "Turtle".')
+
 
 
 # -----------------------------------------------------
