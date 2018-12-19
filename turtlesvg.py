@@ -477,12 +477,14 @@ class MyTurtle():
                 else:
                     large_arc_flag = 1
 
-                if extent < 0:
+                if extent < 0 and radius > 0:
+                    sweep_flag = 1
+                elif extent > 0 and radius < 0:
                     sweep_flag = 1
                 else:
                     sweep_flag = 0
                 
-                self._on_arc_move(radius, radius, 
+                self._on_arc_move(abs(radius), abs(radius), 
                                   0, large_arc_flag, sweep_flag,
                                   pt[0], pt[1])
             else: # 全円以上は，半円以下を繰り返し描かせる
