@@ -76,7 +76,8 @@ def dot_test(t):
 
 
 if __name__ == '__main__':
-    t = ttl.MyTurtle()
-    koch_test(t)
-    dot_test(t)
+    t1 = ttl.Turtle()
+    koch_test(t1)
+    t2 = ttl.Turtle()
+    dot_test(t2)
     

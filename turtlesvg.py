@@ -63,6 +63,12 @@ class Turtle():
         self.__paths = []
         self.__fill_paths = []
         self._path_init()
+        
+        # SVG描画の順番をタートルと同じにするための変数
+        self.__faithful_paths = []
+        self.__tmp_paths = []
+        self._faithful = True # デフォルトはタートルと同一にしておく．
+        
 
         # dot管理用
         self.circles = Circles()
@@ -74,6 +80,18 @@ class Turtle():
 
         self.back_ground_color = None
 
+    def set_faithful(self, faithful=None):
+        '''
+        SVG描画順序を，タートルに忠実にするかどうか設定．
+        引数なしで呼び出した場合はtoggleする．
+        '''
+        if faithful is None:
+            self._faithful = not self._faithful
+        else:
+            if faithful:
+                self._faithful = True
+            else:
+                self._faithful = False
 
     def _on_move(self):
 
@@ -95,6 +113,8 @@ class Turtle():
 
     def _fill_path_init(self):
         self.__fill_path = Path(self.pos(), filling=True)
+        self.__tmp_paths = []
+
         
     def _polyline_terminate(self):
         '''
@@ -124,12 +144,20 @@ class Turtle():
         if len(self.__path.d_list) > 1:
             self.__path.set_pen(self.pen())
             self.__paths.append(self.__path)
+            if self.filling():
+                self.__tmp_paths.append(self.__path)
+            else:
+                self.__faithful_paths.append(self.__path)
+                
 
 
     def _fill_path_terminate(self):
         self.__fill_path.set_pen(self.pen())
         self.__fill_path.close_path()
         self.__fill_paths.append(self.__fill_path)
+        
+        self.__faithful_paths.append(self.__fill_path)
+        self.__faithful_paths += self.__tmp_paths
 
 
     def _restore_polyline(self):
@@ -766,7 +794,6 @@ class Turtle():
         return self.__turtle.distance(x,y)
 
 
-
     def degrees(self, fullcircle=360.0):
         '''
         :param fullcircle : a number
@@ -788,7 +815,6 @@ class Turtle():
         90.0
         '''
         return self.__turtle.degrees(fullcircle)
-
 
 
     def radians(self):
@@ -822,7 +848,6 @@ class Turtle():
     down = pendown
 
 
-
     def penup(self):
         '''
         ペンを上げます（動いても線は引かれません）。
@@ -834,7 +859,6 @@ class Turtle():
 
     pu = penup
     up = penup
-
 
 
     def pensize(self, width=None):
@@ -922,8 +946,6 @@ class Turtle():
                 # なんか危ない作り方ではあるな，なんとかならんものかこれ．
                 self._polyline_terminate()
                 self._polyline_init()
-
-
 
 
     def isdown(self):
@@ -1106,7 +1128,11 @@ class Turtle():
         >>> turtle.end_fill()
         24.1.3.4.4. さらなる描画の制御
         '''
+        self._path_terminate()
         self._fill_path_terminate()
+        if self.isdown():
+            self._path_init()
+
         self.__turtle.end_fill()
 
 
@@ -2303,14 +2329,13 @@ class Turtle():
 
 class MyTurtle(Turtle):
     '''
-    最初，オリジナルのTurtle特別するためにMyTurtleという名前で作り始めたが，
+    最初，オリジナルの Turtle と区別するために MyTurtle という名前で作り始めたが，
     やはりMyとか付けとくのはあまりよくないので，改名した．
     旧バージョンとの互換を保つための子クラス
     '''
     def __init__(self):
         super().__init__()
         print('Class "MyTurtle" is obsolete. Use "Turtle".')
-
 
 
 # -----------------------------------------------------
