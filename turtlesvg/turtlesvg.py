@@ -67,9 +67,12 @@ class Turtle():
         
         # SVG描画の順番をタートルと同じにするための変数
         self.__faithful_paths = []
-        self.__tmp_paths = [] # fillのある場合に一度pathを退避させておく
-        self._faithful = True # デフォルトはタートルと同一にしておく．
-        
+        # 塗りがある場合は先にfillをやらないといけないので，pathはtmp_pathsに
+        # 一時退避させて，faithful_pathsにはfillが格納されたあとでまとめて格納する．
+        # pensize や pencolor の変更があると（fillpathは継続したまま）
+        # 複数のtmp_pathが保持されることがあるのでリストになっている．
+        self.__tmp_paths = []
+        self._faithful = True # デフォルトはタートルと同じにしておく．
 
         # dot管理用
         self.circles = Circles()
@@ -152,15 +155,14 @@ class Turtle():
             self.__path.set_pen(self.pen())
             self.__paths.append(self.__path)
             if self.filling():
-                # 塗りがある場合は先にfillをやらないといけないので，pathは一時退避．
+                # 先にfillが格納されるまでpathは一時退避．
                 self.__tmp_paths.append(self.__path)
             else:
                 self.__faithful_paths.append(self.__path)
 
 
     def _fill_path_terminate(self):
-        #TODO このメソッドを単独で呼ぶことあるのか？必ずpath_terminateと同時に呼ぶのでは？
-        #     チェックして統合可能ならしてしまうべき．
+        # 基本的には
         self.__fill_path.set_pen(self.pen())
         
         # 開始点と終了点をつなぐ（SVGのpath末尾に'Z'をつける）
@@ -268,6 +270,8 @@ class Turtle():
         #    svg_elem = pl.get_svg(unit_width=unit_width, unit_length=unit_length)
         #    svg_svg.append_element(svg_elem)
 
+        #TODO dotによる描画は，他のpathとの順番が記録できていないので，
+        #     この実装では faithfulオプションで変化しない．
         svg_circles = svg.SvgCircles(self.circles)
         svg_svg.append_element_str(svg_circles.get_svg())
         
@@ -1103,7 +1107,6 @@ class Turtle():
         こちらも参照: スクリーンのメソッド colormode() 。
         '''
         return self.__turtle.color(*args)
-
 
 
     def filling(self):
@@ -2478,6 +2481,7 @@ class Path(TurtlePicture):
     def close_path(self):
         '''
         pathを閉路にする（SVGのpathの末尾に'Z'を追加する．）
+        基本的にはend_fill()が実行されたときのみを想定．
         '''
         self.d_list.append(DAttrObj('Z'))
         
