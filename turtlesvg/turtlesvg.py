@@ -67,7 +67,7 @@ class Turtle():
         
         # SVG描画の順番をタートルと同じにするための変数
         self.__faithful_paths = []
-        self.__tmp_paths = []
+        self.__tmp_paths = [] # fillのある場合に一度pathを退避させておく
         self._faithful = True # デフォルトはタートルと同一にしておく．
         
 
@@ -144,7 +144,7 @@ class Turtle():
         Pathオブジェクトをリストの末尾に格納する．
         Pathオブジェクトの破棄は行わないので，_path_init()が
         呼び出される前なら，リストの末尾を除外することで続きからpathを作り続けられはする．
-        が，閉じたpathを再開させるなら，__polylines.pop()でPathオブジェクトを受け取って
+        が，閉じたpathを再開させるなら，__paths.pop()でPathオブジェクトを受け取って
         やるべきだろう．
         '''
         # 移動してない場合はリストに追加せずに破棄
@@ -152,14 +152,19 @@ class Turtle():
             self.__path.set_pen(self.pen())
             self.__paths.append(self.__path)
             if self.filling():
+                # 塗りがある場合は先にfillをやらないといけないので，pathは一時退避．
                 self.__tmp_paths.append(self.__path)
             else:
                 self.__faithful_paths.append(self.__path)
-                
 
 
     def _fill_path_terminate(self):
+        #TODO このメソッドを単独で呼ぶことあるのか？必ずpath_terminateと同時に呼ぶのでは？
+        #     チェックして統合可能ならしてしまうべき．
         self.__fill_path.set_pen(self.pen())
+        
+        # 開始点と終了点をつなぐ（SVGのpath末尾に'Z'をつける）
+        # この処理はfillのみ（線の方は閉じない）
         self.__fill_path.close_path()
         self.__fill_paths.append(self.__fill_path)
         
@@ -665,9 +670,9 @@ class Turtle():
         >>> for i in range(8):
         ...     turtle.undo()
         '''
-        #TODO: support
+        #TODO: つくる
+        # undoは、かなり実装したいのだが、思ってたより大変そうだなこれは・・・
         print("Sorry. This command is unsupported...")
-        # undoは、かなり実装したいのだが、思ってたより大変そうだなこれは。
 
 
 
@@ -1202,6 +1207,8 @@ class Turtle():
 
         >>> turtle.hideturtle()
         '''
+        # 移動後にタートルを隠すことはよくあるので，
+        # ここに _path_terminate を仕込んでも良いような予感はするが，保留．
         self.__turtle.hideturtle()
 
     ht = hideturtle
@@ -1713,7 +1720,7 @@ class Turtle():
         # 逃げ出してしまったタートルを探すためとかね ;-)
 
         '''
-        return self.__turtle.screensize(canvwidth, canvheight, bg)
+        return self.__turtle.screen.screensize(canvwidth, canvheight, bg)
 
 
 
@@ -1755,7 +1762,7 @@ class Turtle():
         >>> screen.delay()
         5
         '''
-        return self.__turtle.delay(delay)
+        return self.__turtle.screen.tdelay(delay)
 
 
 
@@ -1776,6 +1783,7 @@ class Turtle():
         ...     rt(90)
         ...     dist += 2
         '''
+        # ここは self.__turtle.screen.tracer(n, delay) にすべきか？
         return turtle.tracer(n, delay)
 
 
@@ -2468,6 +2476,9 @@ class Path(TurtlePicture):
         self.d_list.append(d_attr_obj)
 
     def close_path(self):
+        '''
+        pathを閉路にする（SVGのpathの末尾に'Z'を追加する．）
+        '''
         self.d_list.append(DAttrObj('Z'))
         
     def get_svg(self, unit_width=0.5, unit_length=1):
