@@ -53,8 +53,9 @@ def koch_test(t):
      
     t.pu()
     t.update()
-    t.save_as_svg('turtlesvg_test_output.svg', unit_length=1, unit_width=2)
- 
+    t.save_as_svg('koch_sample_output.svg', unit_length=1, unit_width=2)
+
+
 def dot_test(t):
     t.penup()
     t.speed(10)
@@ -71,13 +72,11 @@ def dot_test(t):
         t.dot(size, i/360, 0.5, i/720)
 
     t.update()    
-    t.save_as_svg('dot_test.svg')
+    t.save_as_svg('dot_sample_output.svg')
     
-
 
 if __name__ == '__main__':
     t1 = ttl.Turtle()
     koch_test(t1)
     t2 = ttl.Turtle()
     dot_test(t2)
-    
