@@ -1,4 +1,4 @@
-import turtle
+import turtle as original_turtle
 import svgutl.svgutl as svg
 import datetime
 import math
@@ -53,10 +53,14 @@ class Turtle():
     __whole_y_min = 0
     __whole_y_max = 0
 
-    def __init__(self):
+    def __init__(self, turtle=None):
 
-        self.__turtle = turtle.Turtle()
-        self.__turtle.home()
+        if turtle is None:
+            self.__turtle = original_turtle.Turtle()
+            self.__turtle.home()
+        else:
+            # クローン作るときなど，亀指定できるように
+            self.__turtle = turtle
 
         self._position = self.__turtle.position()
         self._heading  = self.__turtle.heading()
@@ -201,10 +205,12 @@ class Turtle():
         '''
         self.__path = self.__paths.pop()
         # faithful側の復元
-        if self.__paths_stashbox[-1] == self.__path:
-            self.__paths_stashbox.pop()
-        if self.__faithful_paths[-1] == self.__path:
-            self.__faithful_paths.pop()
+        if len(self.__paths_stashbox) > 0:
+            if self.__paths_stashbox[-1] == self.__path:
+                self.__paths_stashbox.pop()
+        if len(self.__faithful_paths) > 0:
+            if self.__faithful_paths[-1] == self.__path:
+                self.__faithful_paths.pop()
         # 記録再開
         self.__path_recording = True
 
@@ -1682,16 +1688,19 @@ class Turtle():
         '''
         t_origin = self.get_turtle()
         t_clone = t_origin.clone()
-        # deepcopy回避のために亀への参照を一度切る
-        self.set_turtle(None)
-        t_new = copy.deepcopy(self)
         
-        # 亀戻す
-        self.set_turtle(t_origin)
-        t_new.set_turtle(t_clone)
+        ## deepcopy回避のために亀への参照を一度切る
+        #self.set_turtle(None)
+        #t_new = copy.deepcopy(self)
         
-        # copyで作ったので亀コンテナには未登録
-        t_new.__registrate_to_container()
+        ## 亀戻す
+        #self.set_turtle(t_origin)
+        #t_new.set_turtle(t_clone)
+        
+        ## copyで作ったので亀コンテナには未登録
+        #t_new.__registrate_to_container()
+        
+        t_new = Turtle(t_clone)
         
         return t_new
 
@@ -1916,7 +1925,8 @@ class Turtle():
         ...     dist += 2
         '''
         # ここは self.__turtle.screen.tracer(n, delay) にすべきか？
-        return turtle.tracer(n, delay)
+        return self.__turtle.screen.tracer(n, delay)
+        #return original_turtle.tracer(n, delay)
 
 
 
@@ -1926,7 +1936,7 @@ class Turtle():
 
         RawTurtle/Turtle のメソッド speed() も参照して下さい。
         '''
-        turtle.update()
+        original_turtle.update()
 
 
 
