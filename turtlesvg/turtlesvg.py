@@ -67,11 +67,11 @@ class Turtle():
         
         # SVG描画の順番をタートルと同じにするための変数
         self.__faithful_paths = []
-        # 塗りがある場合は先にfillをやらないといけないので，pathはtmp_pathsに
-        # 一時退避させて，faithful_pathsにはfillが格納されたあとでまとめて格納する．
+        # 塗りがある場合は先にfillをやらないと線の上から塗られてしまうので，
+        # pathは一時退避させておき，faithful_pathsにはfillが格納されたあとでまとめて格納する．
         # pensize や pencolor の変更があると（fillpathは継続したまま）
-        # 複数のtmp_pathが保持されることがあるのでリストになっている．
-        self.__tmp_paths = []
+        # 複数のpathが退避されることがあるのでリストになっている．
+        self.__paths_stashbox = []
         self._faithful = True # デフォルトはタートルと同じにしておく．
 
         # dot管理用
@@ -124,7 +124,7 @@ class Turtle():
 
     def _fill_path_init(self):
         self.__fill_path = Path(self.pos(), filling=True)
-        self.__tmp_paths = []
+        self.__paths_stashbox = []
 
         
     def _polyline_terminate(self):
@@ -153,7 +153,7 @@ class Turtle():
             self.__paths.append(self.__path)
             if self.filling():
                 # 先にfillが格納されるまでpathは一時退避．
-                self.__tmp_paths.append(self.__path)
+                self.__paths_stashbox.append(self.__path)
             else:
                 self.__faithful_paths.append(self.__path)
             # Noneになるのは移動している場合のみ
@@ -171,7 +171,7 @@ class Turtle():
         self.__fill_paths.append(self.__fill_path)
         
         self.__faithful_paths.append(self.__fill_path)
-        self.__faithful_paths += self.__tmp_paths
+        self.__faithful_paths += self.__paths_stashbox
 
 
     def _restore_polyline(self):
@@ -184,8 +184,8 @@ class Turtle():
         '''
         self.__path = self.__paths.pop()
         # faithful側の復元
-        if self.__tmp_paths[-1] == self.__path:
-            self.__tmp_paths.pop()
+        if self.__paths_stashbox[-1] == self.__path:
+            self.__paths_stashbox.pop()
         if self.__faithful_paths[-1] == self.__path:
             self.__faithful_paths.pop()
         # 記録再開
