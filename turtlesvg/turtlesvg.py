@@ -48,6 +48,10 @@ class Turtle():
     # 亀インスタンスたちには，自身を丸ごと変数に登録させる．
     # cloneしまくって絵を描いたときのcanvas全体を描画したい場合用．
     __turtles_container = []
+    __whole_x_min = 0
+    __whole_x_max = 0
+    __whole_y_min = 0
+    __whole_y_max = 0
 
     def __init__(self):
 
@@ -78,15 +82,15 @@ class Turtle():
         # pensize や pencolor の変更があると（fillpathは継続したまま）
         # 複数のpathが退避されることがあるのでリストになっている．
         self.__paths_stashbox = []
-        self._faithful = True # デフォルトはタートルと同じにしておく．
+        self.__faithful = True # デフォルトはタートルと同じにしておく．
 
         # dot管理用
         self.circles = Circles()
 
-        self._x_min = 0
-        self._x_max = 0
-        self._y_min = 0
-        self._y_max = 0
+        self.__x_min = 0
+        self.__x_max = 0
+        self.__y_min = 0
+        self.__y_max = 0
 
         self.back_ground_color = None
 
@@ -96,7 +100,7 @@ class Turtle():
     def get_turtle(self):
         return self.__turtle
     
-    def __registorate_to_container(self):
+    def __registrate_to_container(self):
         if self not in self.__turtles_container:
             # 自己を自分のコンテナに内包・・・見た目が恐ろしいな！
             self.__turtles_container.append(self)
@@ -107,12 +111,14 @@ class Turtle():
         引数なしで呼び出した場合はtoggleする．
         '''
         if faithful is None:
-            self._faithful = not self._faithful
+            self.__faithful = not self.__faithful
         else:
+            # faithfulがBoolでない場合を想定したコードか？
+            # 意図がわからんので__faithful = faithfulに変更するかも
             if faithful:
-                self._faithful = True
+                self.__faithful = True
             else:
-                self._faithful = False
+                self.__faithful = False
 
     def _on_move(self):
 
@@ -230,25 +236,83 @@ class Turtle():
         return self.__fill_paths
 
     def get_canvas_size(self):
-        return (self._x_min, self._x_max, self._y_min, self._y_max)
+        return (self.__x_min, self.__x_max, self.__y_min, self.__y_max)
 
     def _update_canvas_size(self, line_width=None):
         if line_width is None:
             line_width = self.__turtle.pensize()
         (x, y) = self.pos()
-        if x - line_width < self._x_min:
-            self._x_min = x - line_width 
-        elif x + line_width  > self._x_max:
-            self._x_max = x + line_width 
+        if x - line_width < self.__x_min:
+            self.__x_min = x - line_width
+            Turtle.__whole_x_min = min(self.__x_min, Turtle.__whole_x_min)
+        elif x + line_width  > self.__x_max:
+            self.__x_max = x + line_width 
+            Turtle.__whole_x_max = max(self.__x_max, Turtle.__whole_x_max)
 
-        if y - line_width  < self._y_min:
-            self._y_min = y - line_width 
-        elif y + line_width  > self._y_max:
-            self._y_max = y + line_width 
+        if y - line_width  < self.__y_min:
+            self.__y_min = y - line_width 
+            Turtle.__whole_y_min = min(self.__y_min, Turtle.__whole_y_min)
+        elif y + line_width  > self.__y_max:
+            self.__y_max = y + line_width 
+            Turtle.__whole_y_max = max(self.__y_max, Turtle.__whole_y_max)
 
     def _set_bgcolor(self, color):
         self.back_ground_color = color
+
+
+    def save_whole_as_svg(self, filename=None, 
+                 unit_width=1, unit_length=1, margin=5, 
+                 bg_color=None):
+        '''
+        すべての亀の描画結果を，1つのSVG画像として保存する．
         
+        :param filename:    ファイル名
+        :param unit_width:  線の太さ
+        :param unit_length: 単位長さ
+        :param margin:      画像外周の余白幅
+        :param bg_color:    背景色
+        
+        ・ファイル名を指定せず実行すると，
+         「turtlesvg_output_日付時刻.svg」に保存
+        ・背景色を設定すると，その色のrectを1つ背後に配置． 
+        '''
+                
+        x0 = int(Turtle.__whole_x_min - margin)
+        y0 = int(Turtle.__whole_y_max + margin)
+        w = int(Turtle.__whole_x_max + margin*2) - x0
+        h = y0 - int(Turtle.__whole_y_min - margin)
+
+        # y座標は反転        
+        svg_svg = svg.Svg(w=w, h=h, x0=x0, y0=-y0, vb_w=w, vb_h=h)
+        
+        # 背景色指定があれば、その色のrectを生成
+        if not bg_color and self.back_ground_color:
+            bg_color = self.back_ground_color
+        if bg_color:
+            bg_rect = svg.SvgElement('rect', {
+                    'x'      : x0, 
+                    'y'      : -y0, 
+                    'width'  : w, 
+                    'height' : h,
+                    'fill'   : bg_color
+                    })
+            svg_svg.append_element(bg_rect)
+
+        for ttl in self.__turtles_container:
+            ttl.__gen_svg_body(svg_svg=svg_svg, unit_width=unit_width, 
+                               unit_length=unit_length, margin=margin)
+
+        svg_str = svg_svg.get_svg()
+        
+        if filename == None:
+            dt = datetime.date.today()
+            time_str = dt.strftime("%Y-%m%d-%H%M-%S")
+            filename = f'turtlesvg_output_{time_str}.svg'
+        
+        with open(filename, "w") as f:
+            f.write(svg_str)
+
+
     def save_as_svg(self, filename=None, 
                  unit_width=1, unit_length=1, margin=5, 
                  bg_color=None):
@@ -265,21 +329,11 @@ class Turtle():
          「turtlesvg_output_日付時刻.svg」に保存
         ・背景色を設定すると，その色のrectを1つ背後に配置． 
         '''
-        
-        # save_as_svgによって意図せずpathが終了するのを避けるために，
-        # penup()を明示的に利用することを要請しているが，やっぱ自動で一度penupしてもいい気はする
-        # 将来的には自動でやったあとpathが再開可能な状態にすることで対応すればいいのでは．
-        if self.__path_recording: 
-            self._polyline_terminate()
-            self._path_terminate()
-            restore_flag = True
-        else:
-            restore_flag = False
-        
-        x0 = int(self._x_min - margin)
-        y0 = int(self._y_max + margin)
-        w = int(self._x_max + margin*2) - x0
-        h = y0 - int(self._y_min - margin)
+                
+        x0 = int(self.__x_min - margin)
+        y0 = int(self.__y_max + margin)
+        w = int(self.__x_max + margin*2) - x0
+        h = y0 - int(self.__y_min - margin)
 
         # y座標は反転        
         svg_svg = svg.Svg(w=w, h=h, x0=x0, y0=-y0, vb_w=w, vb_h=h)
@@ -297,7 +351,37 @@ class Turtle():
                     })
             svg_svg.append_element(bg_rect)
         
-        if self._faithful:
+        self.__gen_svg_body(svg_svg=svg_svg, unit_width=unit_width, 
+                            unit_length=unit_length, margin=margin)
+
+        svg_str = svg_svg.get_svg()
+        
+        if filename == None:
+            dt = datetime.date.today()
+            time_str = dt.strftime("%Y-%m%d-%H%M-%S")
+            filename = f'turtlesvg_output_{time_str}.svg'
+        
+        with open(filename, "w") as f:
+            f.write(svg_str)
+
+
+
+    def __gen_svg_body(self, svg_svg, 
+                       unit_width, unit_length, margin):
+        '''
+        :param svg_svg: svg.Svg object
+        svg_svg に，亀の移動結果をsvg化して格納する（return ナシ）
+        '''
+
+        # pathが記録中の状態なら一度記録終了させてあとで復元する．
+        if self.__path_recording: 
+            self._polyline_terminate()
+            self._path_terminate()
+            restore_flag = True
+        else:
+            restore_flag = False
+
+        if self.__faithful:
             for ffp in self.__faithful_paths:
                 svg_elem = ffp.get_svg(unit_width=unit_width, unit_length=unit_length)
                 svg_svg.append_element(svg_elem)
@@ -320,16 +404,7 @@ class Turtle():
         svg_circles = svg.SvgCircles(self.circles)
         svg_svg.append_element_str(svg_circles.get_svg())
         
-        svg_str = svg_svg.get_svg()
-        
-        if filename == None:
-            dt = datetime.date.today()
-            time_str = dt.strftime("%Y-%m%d-%H%M-%S")
-            filename = f'turtlesvg_output_{time_str}.svg'
-        
-        with open(filename, "w") as f:
-            f.write(svg_str)
-
+        # pathの記録中だった場合はここで復元
         if restore_flag:
             self._restore_polyline()
             if self.__path is None:
@@ -340,8 +415,8 @@ class Turtle():
 
             
     def printbb(self):
-        print(f"x_min:{self._x_min}, y_min:{self._y_min}")
-        print(f"x_max:{self._x_max}, y_max:{self._y_max}")
+        print(f"x_min:{self.__x_min}, y_min:{self.__y_min}")
+        print(f"x_max:{self.__x_max}, y_max:{self.__y_max}")
 
     # -- 以下はturtleモジュールから取り込んだ関数たち ---------------------------------------------------
 
@@ -1616,7 +1691,7 @@ class Turtle():
         t_new.set_turtle(t_clone)
         
         # copyで作ったので亀コンテナには未登録
-        t_new.__registorate_to_container()
+        t_new.__registrate_to_container()
         
         return t_new
 
