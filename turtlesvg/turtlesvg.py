@@ -31,8 +31,7 @@ class Turtle():
     　　（ただし、通常のturtleモジュールの全ての機能をサポートしていない・・・！）
       
     　　最後に、
-        　　        #!-- 重要 --!#
-      　　t.penup() # 保存前に1度ペンアップの実行が必要
+      
       　　t.save_as_svg("filename.svg")
         
     　　などとすると、"filename.svg"にSVGファイルが保存される。  
@@ -63,6 +62,7 @@ class Turtle():
         # 従って，pendownかつfillingのときには両方に点を追加していく
         self.__paths = []
         self.__fill_paths = []
+        self.__path_recording = False # 記録中はTrueにする．記録中断用．
         self._path_init()
         
         # SVG描画の順番をタートルと同じにするための変数
@@ -119,6 +119,7 @@ class Turtle():
         self.__polyline = Polyline(self.pos())
 
     def _path_init(self):
+        self.__path_recording = True
         self.__path = Path(self.pos())
 
     def _fill_path_init(self):
@@ -128,16 +129,13 @@ class Turtle():
         
     def _polyline_terminate(self):
         '''
-        polylineを閉じる．
+        polylineの記録を終了．
         現在のペン状態をPolylineオブジェクトに記憶させたのち，
         Polylineオブジェクトをリストの末尾に格納する．
-        Polylineオブジェクトの破棄は行わないので，_polyline_init()が
-        呼び出される前なら，リストの末尾を除外することで続きからpolylineを作り続けられはする．
-        が，閉じたpolylineを再開させるなら，__polylines.pop()でPolylineオブジェクトを受け取って
-        やるべきだろう．
         '''
         self.__polyline.set_pen(self.pen())
         self.__polylines.append(self.__polyline)
+        self.__polyline = None
 
 
     def _path_terminate(self):
@@ -145,13 +143,12 @@ class Turtle():
         pathの記録を終了．
         現在のペン状態をPathオブジェクトに記憶させたのち，
         Pathオブジェクトをリストの末尾に格納する．
-        Pathオブジェクトの破棄は行わないので，_path_init()が
-        呼び出される前なら，リストの末尾を除外することで続きからpathを作り続けられはする．
-        が，閉じたpathを再開させるなら，__paths.pop()でPathオブジェクトを受け取って
-        やるべきだろう．
+        格納が行われた場合は，__path はNoneに戻る．
+        #TODO Noneになっていなければ格納されていない（移動ナシ判定）
+              と判断できるようになっており，実際それが利用されているが，この仕様はなんとかならんものか．
         '''
-        # 移動してない場合はリストに追加せずに破棄
-        if len(self.__path.d_list) > 1:
+        # 移動してない場合はリストに追加しない
+        if self.__path.was_moved():
             self.__path.set_pen(self.pen())
             self.__paths.append(self.__path)
             if self.filling():
@@ -159,6 +156,9 @@ class Turtle():
                 self.__tmp_paths.append(self.__path)
             else:
                 self.__faithful_paths.append(self.__path)
+            # Noneになるのは移動している場合のみ
+            self.__path = None
+        self.__path_recording = False
 
 
     def _fill_path_terminate(self):
@@ -178,9 +178,24 @@ class Turtle():
         self.__polyline = self.__polylines.pop()
 
     def _restore_path(self):
+        '''
+        現状は，_path_terminate の直後に復元したい場合を想定した機能．
+        undoを実装する場合も使えるとは思っている．
+        '''
         self.__path = self.__paths.pop()
+        # faithful側の復元
+        if self.__tmp_paths[-1] == self.__path:
+            self.__tmp_paths.pop()
+        if self.__faithful_paths[-1] == self.__path:
+            self.__faithful_paths.pop()
+        # 記録再開
+        self.__path_recording = True
+
 
     def _restore_fill_path(self):
+        '''
+        今のところこれを利用する予定がないが，将来もしundoを実装する場合は必要か．
+        '''
         self.__fill_path = self.__fill_paths.pop()
 
     def _clear_pictures(self):
@@ -236,6 +251,17 @@ class Turtle():
          「turtlesvg_output_日付時刻.svg」に保存
         ・背景色を設定すると，その色のrectを1つ背後に配置． 
         '''
+        
+        # save_as_svgによって意図せずpathが終了するのを避けるために，
+        # penup()を明示的に利用することを要請しているが，やっぱ自動で一度penupしてもいい気はする
+        # 将来的には自動でやったあとpathが再開可能な状態にすることで対応すればいいのでは．
+        if self.__path_recording: 
+            self._polyline_terminate()
+            self._path_terminate()
+            restore_flag = True
+        else:
+            restore_flag = False
+        
         x0 = int(self._x_min - margin)
         y0 = int(self._y_max + margin)
         w = int(self._x_max + margin*2) - x0
@@ -284,6 +310,15 @@ class Turtle():
         
         with open(filename, "w") as f:
             f.write(svg_str)
+
+        if restore_flag:
+            self._restore_polyline()
+            if self.__path is None:
+                self._restore_path()
+            # うーん．_restore_path内でもTrueにするんだが，上のif通ってないことがあるからなあ．
+            self.__path_recording = True
+
+
             
     def printbb(self):
         print(f"x_min:{self._x_min}, y_min:{self._y_min}")
@@ -2465,6 +2500,13 @@ class Path(TurtlePicture):
         if start_pt:
             self.append_pt(start_pt)
         self.filling = filling
+    
+    def was_moved(self):
+        '''
+        2点以上が記録されているかどうかを返す．
+        （1点の場合は，start_ptのみで，移動してない）
+        '''
+        return len(self.d_list) > 1
     
     def append_pt(self, pt):
         self.d_list.append(DM(pt[0], pt[1]))
