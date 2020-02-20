@@ -44,6 +44,10 @@ class Turtle():
       http://docs.python.jp/3.3/library/turtle.html
     による．
     '''
+    
+    # 亀インスタンスたちには，自身を丸ごと変数に登録させる．
+    # cloneしまくって絵を描いたときのcanvas全体を描画したい場合用．
+    __turtles_container = []
 
     def __init__(self):
 
@@ -67,6 +71,8 @@ class Turtle():
         
         # SVG描画の順番をタートルと同じにするための変数
         self.__faithful_paths = []
+        # copyでインスタンス作られるとコンテナ格納が実行されないが，まあもうそれは対応しなくていいよな．
+        self.__registrate_to_container()
         # 塗りがある場合は先にfillをやらないと線の上から塗られてしまうので，
         # pathは一時退避させておき，faithful_pathsにはfillが格納されたあとでまとめて格納する．
         # pensize や pencolor の変更があると（fillpathは継続したまま）
@@ -89,6 +95,11 @@ class Turtle():
 
     def get_turtle(self):
         return self.__turtle
+    
+    def __registorate_to_container(self):
+        if self not in self.__turtles_container:
+            # 自己を自分のコンテナに内包・・・見た目が恐ろしいな！
+            self.__turtles_container.append(self)
 
     def set_faithful(self, faithful=None):
         '''
@@ -198,10 +209,13 @@ class Turtle():
         '''
         self.__fill_path = self.__fill_paths.pop()
 
+    #TODO 名前がよくないのでは・・・？
     def _clear_pictures(self):
         self.__polylines = []
         self.__paths = []
         self.__fill_paths = []
+        self.__faithful_paths = []
+        self.__paths_stashbox = []
         self._polyline_init()
         self._path_init()
 
@@ -283,18 +297,23 @@ class Turtle():
                     })
             svg_svg.append_element(bg_rect)
         
-        # fillが先　# 本当はタートルの描画順通りにするか選べる方が良いか．
-        for fp in self.__fill_paths:
-            svg_elem = fp.get_svg(unit_width=unit_width, unit_length=unit_length)
-            svg_svg.append_element(svg_elem)
-
-        for p in self.__paths:
-            svg_elem = p.get_svg(unit_width=unit_width, unit_length=unit_length)
-            svg_svg.append_element(svg_elem)
-
-        #for pl in self.__polylines:
-        #    svg_elem = pl.get_svg(unit_width=unit_width, unit_length=unit_length)
-        #    svg_svg.append_element(svg_elem)
+        if self._faithful:
+            for ffp in self.__faithful_paths:
+                svg_elem = ffp.get_svg(unit_width=unit_width, unit_length=unit_length)
+                svg_svg.append_element(svg_elem)
+        else:
+            # fillが先
+            for fp in self.__fill_paths:
+                svg_elem = fp.get_svg(unit_width=unit_width, unit_length=unit_length)
+                svg_svg.append_element(svg_elem)
+    
+            for p in self.__paths:
+                svg_elem = p.get_svg(unit_width=unit_width, unit_length=unit_length)
+                svg_svg.append_element(svg_elem)
+    
+            #for pl in self.__polylines:
+            #    svg_elem = pl.get_svg(unit_width=unit_width, unit_length=unit_length)
+            #    svg_svg.append_element(svg_elem)
 
         #TODO dotによる描画は，他のpathとの順番が記録できていないので，
         #     この実装では faithfulオプションで変化しない．
@@ -315,9 +334,9 @@ class Turtle():
             self._restore_polyline()
             if self.__path is None:
                 self._restore_path()
-            # うーん．_restore_path内でもTrueにするんだが，上のif通ってないことがあるからなあ．
+            # うーん．_restore_path内でもTrueにするんだが・・・，
+            # 上のif通ってないときのために必要なんだよなあ．
             self.__path_recording = True
-
 
             
     def printbb(self):
@@ -435,7 +454,6 @@ class Turtle():
     setposition = goto
 
 
-
     def setx(self, x):
         '''
         :param x : a number (integer or float)
@@ -451,7 +469,6 @@ class Turtle():
         self._on_move()
 
 
-
     def sety(self, y):
         '''
         :param y : a number (integer or float)
@@ -465,7 +482,6 @@ class Turtle():
         '''
         self.__turtle.sety(y)
         self._on_move()
-
 
 
     def setheading(self, to_angle):
@@ -1598,7 +1614,10 @@ class Turtle():
         # 亀戻す
         self.set_turtle(t_origin)
         t_new.set_turtle(t_clone)
-
+        
+        # copyで作ったので亀コンテナには未登録
+        t_new.__registorate_to_container()
+        
         return t_new
 
 
