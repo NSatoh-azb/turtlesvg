@@ -2,7 +2,6 @@ import turtle as original_turtle
 import svgutl.svgutl as svg
 import datetime
 import math
-import copy
 
 class Turtle():
     '''
@@ -1671,39 +1670,18 @@ class Turtle():
         pass
 
 
-
     def clone(self):
         '''
         位置、向きその他のプロパティがそっくり同じタートルのクローンを作って返します。
 
         >>> mick = Turtle()
         >>> joe = mick.clone()
-        
-        #TODO: クローンを繰り返し作りながら再帰的に動くような亀を作ると，
-               今の実装では1つ1つの亀の持っているpathなどの情報は
-               バラバラ（クローン先の亀はもとのpathも持っているが）．
-               path のデータを亀に持たせる今のやり方では仕方ない．
-               canvas にも記録させるとか，何か全体的な変更が必要．
-        
         '''
         t_origin = self.get_turtle()
         t_clone = t_origin.clone()
-        
-        ## deepcopy回避のために亀への参照を一度切る
-        #self.set_turtle(None)
-        #t_new = copy.deepcopy(self)
-        
-        ## 亀戻す
-        #self.set_turtle(t_origin)
-        #t_new.set_turtle(t_clone)
-        
-        ## copyで作ったので亀コンテナには未登録
-        #t_new.__registrate_to_container()
-        
         t_new = Turtle(t_clone)
         
         return t_new
-
 
 
     def getturtle(self):
@@ -1903,7 +1881,7 @@ class Turtle():
         >>> screen.delay()
         5
         '''
-        return self.__turtle.screen.tdelay(delay)
+        return self.__turtle.screen.delay(delay)
 
 
 
