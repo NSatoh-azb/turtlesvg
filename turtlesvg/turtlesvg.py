@@ -413,9 +413,9 @@ class Turtle():
         
         # pathの記録中だった場合はここで復元
         if restore_flag:
+            self._restore_polyline()
             if self.__path is None:
                 self._restore_path()
-                self._restore_polyline()
             # うーん．_restore_path内でもTrueにするんだが・・・，
             # 上のif通ってないときのために必要なんだよなあ．
             self.__path_recording = True
