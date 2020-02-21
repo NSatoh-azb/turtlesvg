@@ -153,9 +153,10 @@ class Turtle():
         現在のペン状態をPolylineオブジェクトに記憶させたのち，
         Polylineオブジェクトをリストの末尾に格納する．
         '''
-        self.__polyline.set_pen(self.pen())
-        self.__polylines.append(self.__polyline)
-        self.__polyline = None
+        if self.__polyline is not None:
+            self.__polyline.set_pen(self.pen())
+            self.__polylines.append(self.__polyline)
+            self.__polyline = None
 
 
     def _path_terminate(self):
@@ -167,18 +168,19 @@ class Turtle():
         #TODO Noneになっていなければ格納されていない（移動ナシ判定）
               と判断できるようになっており，実際それが利用されているが，この仕様はなんとかならんものか．
         '''
-        # 移動してない場合はリストに追加しない
-        if self.__path.was_moved():
-            self.__path.set_pen(self.pen())
-            self.__paths.append(self.__path)
-            if self.filling():
-                # 先にfillが格納されるまでpathは一時退避．
-                self.__paths_stashbox.append(self.__path)
-            else:
-                self.__faithful_paths.append(self.__path)
-            # Noneになるのは移動している場合のみ
-            self.__path = None
-        self.__path_recording = False
+        if self.__path is not None:
+            # 移動してない場合はリストに追加しない
+            if self.__path.was_moved():
+                self.__path.set_pen(self.pen())
+                self.__paths.append(self.__path)
+                if self.filling():
+                    # 先にfillが格納されるまでpathは一時退避．
+                    self.__paths_stashbox.append(self.__path)
+                else:
+                    self.__faithful_paths.append(self.__path)
+                # Noneになるのは移動している場合のみ
+                self.__path = None
+            self.__path_recording = False
 
 
     def _fill_path_terminate(self):
@@ -411,9 +413,9 @@ class Turtle():
         
         # pathの記録中だった場合はここで復元
         if restore_flag:
-            self._restore_polyline()
             if self.__path is None:
                 self._restore_path()
+                self._restore_polyline()
             # うーん．_restore_path内でもTrueにするんだが・・・，
             # 上のif通ってないときのために必要なんだよなあ．
             self.__path_recording = True
