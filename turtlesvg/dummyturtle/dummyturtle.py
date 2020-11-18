@@ -105,6 +105,7 @@ class Turtle:
             dy = r * dsin(self._head - 90 + extent)
             self._x = cx + dx
             self._y = cy + dy
+            self._head += extent
 
     def pendown(self):
         self._isdown = True
