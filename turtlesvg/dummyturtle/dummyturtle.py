@@ -139,7 +139,10 @@ class Turtle:
         if args is ():
             return self._pen['pencolor']
         else:
-            self._pen['pencolor'] = args
+            if len(args) == 1:
+                self._pen['pencolor'] = args[0]
+            else:
+                self._pen['pencolor'] = color_format(args)
 
     def pen(self, pen=None, **pendict):
         if (pen is None) and (pendict == {}):
@@ -165,7 +168,7 @@ class Turtle:
         if args == ():
             return self._pen['fillcolor']
         else:
-            self._pen['fillcolor'] = args
+            self._pen['fillcolor'] = color_format(args)
 
     
     def undo(self):
@@ -268,8 +271,18 @@ class Screen:
         if args == ():
             return self._bgcolor
         else:
-            self._bgcolor = args
+            self._bgcolor = color_format(args)
     
     def clearscreen(self):
         pass
+
+
+def color_format(args):
+    if type(args) == tuple:
+        if len(args) == 1:
+            return args[0]
+        else:
+            return args
+    else:
+        return args
 
