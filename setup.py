@@ -3,9 +3,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='turtlesvg',
-    version='2.0b',
+    version='2.1',
     author='SATOH Naotaka',
     py_modules=['turtlesvg'],
-    packages=['svgutl'],
+    packages=['svgutl', 'dummyturtle'],
     package_dir={'':'turtlesvg'}
     )

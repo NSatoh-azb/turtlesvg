@@ -1,9 +1,10 @@
 import turtle as original_turtle
 import svgutl.svgutl as svg
+import dummyturtle.dummyturtle as dumttl
 import datetime
 import math
 
-class Turtle():
+class Turtle:
     '''
 　　  spyderなど、IPython環境では、マジックコマンド
     
@@ -52,11 +53,14 @@ class Turtle():
     __whole_y_min = 0
     __whole_y_max = 0
 
-    def __init__(self, turtle=None):
+    def __init__(self, turtle=None, noturtle=False):
 
         if turtle is None:
-            self.__turtle = original_turtle.Turtle()
-            self.__turtle.home()
+            if noturtle:
+                self.__turtle = dumttl.Turtle()
+            else:
+                self.__turtle = original_turtle.Turtle()
+                self.__turtle.home()
         else:
             # クローン作るときなど，亀指定できるように
             self.__turtle = turtle
