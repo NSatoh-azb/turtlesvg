@@ -139,10 +139,7 @@ class Turtle:
         if args is ():
             return self._pen['pencolor']
         else:
-            if len(args) == 1:
-                self._pen['pencolor'] = args[0]
-            else:
-                self._pen['pencolor'] = color_format(args)
+            self._pen['pencolor'] = color_format(args)
 
     def pen(self, pen=None, **pendict):
         if (pen is None) and (pendict == {}):
