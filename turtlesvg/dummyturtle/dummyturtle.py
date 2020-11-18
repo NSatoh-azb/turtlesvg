@@ -4,6 +4,7 @@ Azabu high school, department of mathematics
 """
 
 import math
+import copy
 from turtle import Vec2D
 
 def dcos(a):
@@ -143,7 +144,7 @@ class Turtle:
 
     def pen(self, pen=None, **pendict):
         if (pen is None) and (pendict == {}):
-            return self._pen
+            return copy.deepcopy(self._pen)
         elif pen is not None:
             self._pen = pen
         else:
