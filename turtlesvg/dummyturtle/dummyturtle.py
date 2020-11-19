@@ -64,9 +64,22 @@ class Turtle:
         self._head += a
     lt = left
     
-    def setposition(self, x, y):
-        self._x = x
-        self._y = y
+    def setposition(self, x, y=None):
+        '''
+        Arguments:
+          x -- a number      or     a pair/vector of numbers
+          y -- a number             None
+    
+          call: goto(x, y)         # two coordinates
+          --or: goto((x, y))       # a pair (tuple) of coordinates
+          --or: goto(vec)          # e.g. as returned by pos()
+        '''
+        if y is not None:
+            self._x = x
+            self._y = y
+        else:
+            self._x = x[0]
+            self._y = x[1]
     
     setpos = setposition
     goto = setposition
