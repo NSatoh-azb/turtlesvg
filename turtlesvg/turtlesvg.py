@@ -1,3 +1,4 @@
+#import dummyturtle.dummyturtle as original_turtle
 import turtle as original_turtle
 import svgutl.svgutl as svg
 import dummyturtle.dummyturtle as dumttl
@@ -60,7 +61,7 @@ class Turtle:
                 self.__turtle = dumttl.Turtle()
             else:
                 self.__turtle = original_turtle.Turtle()
-                self.__turtle.home()
+                #self.__turtle.home()
         else:
             # クローン作るときなど，亀指定できるように
             self.__turtle = turtle
@@ -1920,7 +1921,7 @@ class Turtle:
 
         RawTurtle/Turtle のメソッド speed() も参照して下さい。
         '''
-        original_turtle.update()
+        self.__turtle.screen.update()
 
 
 

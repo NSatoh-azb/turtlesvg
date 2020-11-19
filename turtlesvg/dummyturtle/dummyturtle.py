@@ -140,7 +140,7 @@ class Turtle:
         if args is ():
             return self._pen['pencolor']
         else:
-            self._pen['pencolor'] = color_format(args)
+            self._pen['pencolor'] = _color_format(args)
 
     def pen(self, pen=None, **pendict):
         if (pen is None) and (pendict == {}):
@@ -166,7 +166,7 @@ class Turtle:
         if args == ():
             return self._pen['fillcolor']
         else:
-            self._pen['fillcolor'] = color_format(args)
+            self._pen['fillcolor'] = _color_format(args)
 
     
     def undo(self):
@@ -183,23 +183,23 @@ class Turtle:
     def reset(self):
         self.__init__()
 
-    def clear():
+    def clear(self):
         '''
         描いたものを全て消去する．タートルやペンの状態はそのまま．
 
         '''
         pass
 
-    def hideturtle():
+    def hideturtle(self):
         pass
     
     ht = hideturtle
     
-    def showturtle():
+    def showturtle(self):
         pass
     
     st = showturtle
-    
+        
     def screensize(w,h):
         pass
 
@@ -269,13 +269,16 @@ class Screen:
         if args == ():
             return self._bgcolor
         else:
-            self._bgcolor = color_format(args)
+            self._bgcolor = _color_format(args)
     
     def clearscreen(self):
         pass
+    
+    def update(self):
+        pass
 
 
-def color_format(args):
+def _color_format(args):
     if type(args) == tuple:
         if len(args) == 1:
             return args[0]
@@ -284,3 +287,6 @@ def color_format(args):
     else:
         return args
 
+
+def update():
+    pass
