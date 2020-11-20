@@ -55,14 +55,18 @@ class Turtle:
     bk = backward
     back = backward
 
+
     def right(self, a):
         self._head -= a
+        
     rt = right
 
 
     def left(self, a):
         self._head += a
+        
     lt = left
+    
     
     def setposition(self, x, y=None):
         '''
@@ -84,14 +88,18 @@ class Turtle:
     setpos = setposition
     goto = setposition
     
+    
     def setx(self, x):
         self._x = x
+    
     
     def sety(self, y):
         self._y = y
 
+
     def setheading(self, a):
         self._head = a    
+        
     seth = setheading
 
     
@@ -121,20 +129,22 @@ class Turtle:
             self._y = cy + dy
             self._head += extent
 
+
     def pendown(self):
         self._isdown = True
     
     pd = pendown 
     down = pendown
 
+
     def penup(self):
         self._isdown = False
     pu = penup
     up = penup
     
+    
     def isdown(self):
         return self._isdown
-
 
 
     def pensize(self, w=None):
@@ -145,15 +155,21 @@ class Turtle:
 
     width = pensize
     
+    
     def pencolor(self, *args):
         '''
-        colorstringの処理はsvgutlに投げることにして，
-        単に入力された引数をそのまま記録する．
+        本家の仕様に合わせて，
+        (r, g, b) の場合は '#rrggbb'に変更して記録する．
+        
+        ただし，return の方は本家のように(r, g, b)に戻す仕様にはなっていない．
         '''
-        if args is ():
+        if args == ():
+            # ここは面倒なので本家に合わせてない
+            # （本家は'#rrggbb'形式は(r, g, b)に変換してから return）
             return self._pen['pencolor']
         else:
             self._pen['pencolor'] = _color_format(args)
+
 
     def pen(self, pen=None, **pendict):
         if (pen is None) and (pendict == {}):
@@ -163,20 +179,24 @@ class Turtle:
         else:
             for key in pendict:
                 self._pen[key] = pendict[key]
-            
         
         
     def begin_fill(self):
         self._filling = True
     
+    
     def end_fill(self):
         self._filling = False
+
 
     def filling(self):
         return self._filling
 
+
     def fillcolor(self, *args):
         if args == ():
+            # ここは面倒なので本家に合わせてない
+            # （本家は'#rrggbb'形式は(r, g, b)に変換してから return）
             return self._pen['fillcolor']
         else:
             self._pen['fillcolor'] = _color_format(args)
@@ -185,16 +205,22 @@ class Turtle:
     def undo(self):
         print('undo は 未実装')
 
+
     def speed(self, s):
         pass
+    
+    
     def tracer(self, n):
         pass
+    
     
     def update(self):    
         pass
     
+    
     def reset(self):
         self.__init__()
+
 
     def clear(self):
         '''
@@ -203,18 +229,22 @@ class Turtle:
         '''
         pass
 
+
     def hideturtle(self):
         pass
     
     ht = hideturtle
+    
     
     def showturtle(self):
         pass
     
     st = showturtle
         
+    
     def screensize(w,h):
         pass
+
 
     def position(self):
         '''
@@ -225,11 +255,13 @@ class Turtle:
     
     pos = position
     
+    
     def xcor(self):
         '''
         タートルの現在位置の$x$座標を返す． 
         '''
         return self._x
+
 
     def ycor(self):
         '''
@@ -237,11 +269,13 @@ class Turtle:
         '''
         return self._y
     
+    
     def heading(self):
         '''
         タートルの現在の向き（角度）を返す．
         '''
         return self._head
+    
     
     def towards(self, x, y):
         '''
@@ -270,6 +304,9 @@ class Turtle:
         pass
 
 
+
+
+
 class Screen:
     
     def __init__(self):
@@ -292,13 +329,24 @@ class Screen:
 
 
 def _color_format(args):
-    if type(args) == tuple:
-        if len(args) == 1:
-            return args[0]
-        else:
-            return args
+    '''
+    :type args: tuple
+    '''
+    if type(args[0]) == str:
+        return args[0]
     else:
-        return args
+        if len(args) > 1:
+            # args : (r, g, b)　
+            (r, g, b) = args
+        else:
+            # args : ((r, g, b))　
+            (r, g, b) = args[0]
+        R = int(r * 255)
+        G = int(g * 255)
+        B = int(b * 255)
+        cs = f'#{R:0>2x}{G:0>2x}{B:0>2x}'
+        
+        return cs
 
 
 def update():
