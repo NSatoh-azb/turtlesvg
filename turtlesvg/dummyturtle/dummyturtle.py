@@ -202,6 +202,25 @@ class Turtle:
             self._pen['fillcolor'] = _color_format(args)
 
     
+    def color(self, *args):
+        if args == ():
+            return (self.pencolor(), self.fillcolor())
+        else:
+            if len(args) == 2:
+                # case: args = (color1, color2)
+                self.pencolor(args[0])
+                self.fillcolor(args[1])
+            else:
+                if type(args[0]) == str:
+                    # case: args = (colorstring,)
+                    self.pencolor(args[0])
+                    self.fillcolor(args[0])
+                else:
+                    # case: args = (r, g, b) or ((r, g, b),)
+                    self.pencolor(args)
+                    self.fillcolor(args)
+                
+    
     def undo(self):
         print('undo は 未実装')
 
